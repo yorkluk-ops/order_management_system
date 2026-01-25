@@ -11,10 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Save, Package, User, Truck, DollarSign, Plus, X, ShoppingBag } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ArrowLeft, Save, Package, User, Truck, DollarSign, X, ShoppingBag } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { PACKAGE_DEFINITIONS } from "../../../shared/packages";
@@ -41,9 +40,13 @@ export default function OrderNew() {
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState("");
   const [notes, setNotes] = useState("");
   
-  // Product selection
+  // Product selection - using dropdown
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
-  const [showProductSelector, setShowProductSelector] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  
+  // Custom amount for "OTHER" package
+  const [customAmount, setCustomAmount] = useState<number>(0);
+  const [customCommission, setCustomCommission] = useState<number>(0);
 
   // Computed values
   const [orderAmount, setOrderAmount] = useState(0);
@@ -56,34 +59,45 @@ export default function OrderNew() {
   // Get selected package details
   const selectedPkg = PACKAGE_DEFINITIONS.find(p => p.code === selectedPackage);
   const variants = selectedPkg?.variants || [];
+  const isOtherPackage = selectedPackage === "OTHER";
 
   // Update price and commission when package changes
   useEffect(() => {
     if (selectedPkg) {
-      setOrderAmount(selectedPkg.price);
-      setCommission(selectedPkg.commission);
-      
-      if (selectedVariant && selectedPkg.variants) {
-        const variant = selectedPkg.variants.find(v => v.code === selectedVariant);
-        if (variant) {
-          setPackageName(`${selectedPkg.name} - ${variant.name}`);
+      if (isOtherPackage) {
+        setOrderAmount(customAmount);
+        setCommission(customCommission);
+        setPackageName("其他｜單件產品購買");
+      } else {
+        setOrderAmount(selectedPkg.price);
+        setCommission(selectedPkg.commission);
+        
+        if (selectedVariant && selectedPkg.variants) {
+          const variant = selectedPkg.variants.find(v => v.code === selectedVariant);
+          if (variant) {
+            setPackageName(`${selectedPkg.name} - ${variant.name}`);
+          } else {
+            setPackageName(selectedPkg.name);
+          }
         } else {
           setPackageName(selectedPkg.name);
         }
-      } else {
-        setPackageName(selectedPkg.name);
       }
     } else {
       setOrderAmount(0);
       setCommission(0);
       setPackageName("");
     }
-  }, [selectedPackage, selectedVariant, selectedPkg]);
+  }, [selectedPackage, selectedVariant, selectedPkg, isOtherPackage, customAmount, customCommission]);
 
   // Reset variant when package changes
   useEffect(() => {
     setSelectedVariant("");
-  }, [selectedPackage]);
+    if (!isOtherPackage) {
+      setCustomAmount(0);
+      setCustomCommission(0);
+    }
+  }, [selectedPackage, isOtherPackage]);
 
   const createMutation = trpc.orders.create.useMutation({
     onSuccess: (result) => {
@@ -126,7 +140,14 @@ export default function OrderNew() {
     });
   };
 
-  const handleAddProduct = (product: NonNullable<typeof products>[0]) => {
+  // Handle product selection from dropdown
+  const handleProductSelect = (productIdStr: string) => {
+    if (!productIdStr || !products) return;
+    
+    const productId = parseInt(productIdStr);
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
     const existing = selectedProducts.find(p => p.productId === product.id);
     if (existing) {
       setSelectedProducts(prev =>
@@ -136,6 +157,7 @@ export default function OrderNew() {
             : p
         )
       );
+      toast.success(`${product.name} 數量 +1`);
     } else {
       setSelectedProducts(prev => [
         ...prev,
@@ -147,8 +169,11 @@ export default function OrderNew() {
           quantity: 1,
         },
       ]);
+      toast.success(`已新增 ${product.name}`);
     }
-    setShowProductSelector(false);
+    
+    // Reset dropdown
+    setSelectedProductId("");
   };
 
   const handleRemoveProduct = (productId: number) => {
@@ -163,6 +188,13 @@ export default function OrderNew() {
       )
     );
   };
+
+  // Filter out already selected products from dropdown
+  const availableProducts = useMemo(() => {
+    if (!products) return [];
+    const selectedIds = new Set(selectedProducts.map(p => p.productId));
+    return products.filter(p => !selectedIds.has(p.id));
+  }, [products, selectedProducts]);
 
   return (
     <DashboardLayout>
@@ -241,7 +273,7 @@ export default function OrderNew() {
                 </div>
                 <div>
                   <CardTitle className="text-lg">套餐選擇</CardTitle>
-                  <CardDescription>選擇客戶購買的套餐</CardDescription>
+                  <CardDescription>選擇客戶購買的套餐或單件產品</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -257,9 +289,16 @@ export default function OrderNew() {
                       <SelectItem key={pkg.code} value={pkg.code}>
                         <div className="flex flex-col">
                           <span>{pkg.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            ${pkg.price.toLocaleString()} | 佣金 ${pkg.commission}
-                          </span>
+                          {pkg.code !== "OTHER" && (
+                            <span className="text-xs text-muted-foreground">
+                              ${pkg.price.toLocaleString()} | 佣金 ${pkg.commission}
+                            </span>
+                          )}
+                          {pkg.code === "OTHER" && (
+                            <span className="text-xs text-muted-foreground">
+                              自訂金額和佣金
+                            </span>
+                          )}
                         </div>
                       </SelectItem>
                     ))}
@@ -267,7 +306,7 @@ export default function OrderNew() {
                 </Select>
               </div>
 
-              {variants.length > 0 && (
+              {variants.length > 0 && !isOtherPackage && (
                 <div className="space-y-2">
                   <Label htmlFor="variant">選擇變體 *</Label>
                   <Select value={selectedVariant} onValueChange={setSelectedVariant}>
@@ -290,7 +329,40 @@ export default function OrderNew() {
                 </div>
               )}
 
-              {selectedPkg && (
+              {/* Custom amount for OTHER package */}
+              {isOtherPackage && (
+                <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 space-y-4">
+                  <p className="text-sm text-amber-800">
+                    選擇「其他」時，請手動輸入訂單金額和佣金
+                  </p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="customAmount">訂單金額 *</Label>
+                      <Input
+                        id="customAmount"
+                        type="number"
+                        min="0"
+                        placeholder="請輸入金額"
+                        value={customAmount || ""}
+                        onChange={(e) => setCustomAmount(Number(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="customCommission">佣金</Label>
+                      <Input
+                        id="customCommission"
+                        type="number"
+                        min="0"
+                        placeholder="請輸入佣金"
+                        value={customCommission || ""}
+                        onChange={(e) => setCustomCommission(Number(e.target.value) || 0)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedPkg && !isOtherPackage && (
                 <div className="p-4 rounded-lg bg-muted/50 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">套餐說明</span>
@@ -313,74 +385,65 @@ export default function OrderNew() {
             </CardContent>
           </Card>
 
-          {/* Product Selection */}
+          {/* Product Selection - Dropdown Style */}
           <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <ShoppingBag className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">產品明細</CardTitle>
-                    <CardDescription>選擇訂單中的產品（選填）</CardDescription>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ShoppingBag className="h-5 w-5 text-primary" />
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowProductSelector(!showProductSelector)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  新增產品
-                </Button>
+                <div>
+                  <CardTitle className="text-lg">產品明細</CardTitle>
+                  <CardDescription>從下拉選單選擇訂單中的產品（選填）</CardDescription>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Product Selector */}
-              {showProductSelector && products && products.length > 0 && (
-                <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
-                  <Label>選擇產品</Label>
-                  <div className="grid gap-2 max-h-48 overflow-y-auto">
-                    {products.map((product) => (
-                      <button
-                        key={product.id}
-                        type="button"
-                        onClick={() => handleAddProduct(product)}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors text-left"
-                      >
-                        <div>
-                          <div className="font-mono text-sm text-muted-foreground">{product.sku}</div>
-                          <div className="font-medium">{product.name}</div>
-                          {product.color && (
-                            <div className="text-sm text-muted-foreground">{product.color}</div>
-                          )}
-                        </div>
-                        <Plus className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {showProductSelector && (!products || products.length === 0) && (
-                <div className="p-4 rounded-lg border bg-muted/30 text-center">
-                  <p className="text-muted-foreground mb-2">尚無產品</p>
+              {/* Product Dropdown Selector */}
+              <div className="space-y-2">
+                <Label>新增產品</Label>
+                <Select value={selectedProductId} onValueChange={handleProductSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="選擇要新增的產品..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableProducts.length > 0 ? (
+                      availableProducts.map((product) => (
+                        <SelectItem key={product.id} value={product.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-muted-foreground">{product.sku}</span>
+                            <span className="mx-1">|</span>
+                            <span>{product.name}</span>
+                            {product.color && (
+                              <span className="text-muted-foreground">({product.color})</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-products" disabled>
+                        {products && products.length > 0 ? "所有產品已選擇" : "尚無產品，請先新增"}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {(!products || products.length === 0) && (
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="link"
                     size="sm"
+                    className="px-0"
                     onClick={() => setLocation("/products")}
                   >
-                    前往新增產品
+                    前往新增產品 →
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Selected Products */}
+              {/* Selected Products List */}
               {selectedProducts.length > 0 ? (
                 <div className="space-y-2">
+                  <Label className="text-muted-foreground">已選擇的產品</Label>
                   {selectedProducts.map((product) => (
                     <div
                       key={product.productId}
@@ -429,9 +492,10 @@ export default function OrderNew() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-muted-foreground">
+                <div className="text-center py-6 text-muted-foreground border rounded-lg bg-muted/20">
                   <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>尚未選擇產品</p>
+                  <p className="text-xs mt-1">從上方下拉選單選擇產品</p>
                 </div>
               )}
             </CardContent>

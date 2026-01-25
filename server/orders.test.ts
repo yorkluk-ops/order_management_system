@@ -74,7 +74,12 @@ describe("Package definitions validation", () => {
     PACKAGE_DEFINITIONS.forEach((pkg) => {
       expect(pkg.code).toBeTruthy();
       expect(pkg.name).toBeTruthy();
-      expect(pkg.price).toBeGreaterThan(0);
+      // "OTHER" package can have price 0 for custom pricing
+      if (pkg.code === "OTHER") {
+        expect(pkg.price).toBeGreaterThanOrEqual(0);
+      } else {
+        expect(pkg.price).toBeGreaterThan(0);
+      }
       expect(pkg.commission).toBeGreaterThanOrEqual(0);
     });
   });

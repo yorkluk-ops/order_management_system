@@ -84,7 +84,7 @@ export const PACKAGE_DEFINITIONS: PackageDefinition[] = [
   },
   {
     code: "PKG4",
-    name: "🏆 套餐4｜$9,780 荷花展READYGO高級優惠",
+    name: "🏆 套餘4｜$9,780 荷花展READYGO高級優惠",
     description: "立省 $8,554（53折）",
     price: 9780,
     commission: 200,
@@ -94,6 +94,16 @@ export const PACKAGE_DEFINITIONS: PackageDefinition[] = [
     variants: [
       { code: "PKG4-STD", name: "POLED ALL AGE 360 + POLED OREO + UPANG UP920 + PHILIPS PORTTO + EUFY S1 PRO", description: "完整配置" },
     ],
+  },
+  {
+    code: "OTHER",
+    name: "📦 其他｜單件產品購買",
+    description: "只購買單件產品，不選套餐",
+    price: 0,
+    commission: 0,
+    originalValue: 0,
+    savings: "",
+    freeGift: "",
   },
 ];
 
