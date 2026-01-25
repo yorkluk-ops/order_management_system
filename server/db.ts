@@ -1,11 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, desc, and, like, or, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, orders, packages, InsertOrder, InsertPackage, Order, Package } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -17,6 +16,8 @@ export async function getDb() {
   }
   return _db;
 }
+
+// ==================== User Operations ====================
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
@@ -89,4 +90,283 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ==================== Package Operations ====================
+
+export async function getAllPackages(): Promise<Package[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select().from(packages).where(eq(packages.isActive, "yes"));
+  return result;
+}
+
+export async function getPackageById(id: number): Promise<Package | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(packages).where(eq(packages.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createPackage(pkg: InsertPackage): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(packages).values(pkg);
+  return Number(result[0].insertId);
+}
+
+export async function seedPackages(pkgList: InsertPackage[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  for (const pkg of pkgList) {
+    await db.insert(packages).values(pkg).onDuplicateKeyUpdate({
+      set: {
+        name: pkg.name,
+        description: pkg.description,
+        price: pkg.price,
+        commission: pkg.commission,
+        originalValue: pkg.originalValue,
+        savings: pkg.savings,
+        freeGift: pkg.freeGift,
+        isActive: pkg.isActive || "yes",
+      },
+    });
+  }
+}
+
+// ==================== Order Operations ====================
+
+function generateOrderNumber(): string {
+  const now = new Date();
+  const year = now.getFullYear().toString().slice(-2);
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `ORD${year}${month}${day}${random}`;
+}
+
+export async function createOrder(order: Omit<InsertOrder, 'orderNumber'>): Promise<{ id: number; orderNumber: string }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const orderNumber = generateOrderNumber();
+  const result = await db.insert(orders).values({
+    ...order,
+    orderNumber,
+  });
+  
+  return { id: Number(result[0].insertId), orderNumber };
+}
+
+export async function getOrderById(id: number): Promise<Order | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getOrderByNumber(orderNumber: string): Promise<Order | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
+  return result[0];
+}
+
+export interface OrderFilters {
+  search?: string;
+  status?: string;
+  packageId?: number;
+  dateFrom?: Date;
+  dateTo?: Date;
+}
+
+export async function getOrders(filters?: OrderFilters, limit = 100, offset = 0): Promise<{ orders: Order[]; total: number }> {
+  const db = await getDb();
+  if (!db) return { orders: [], total: 0 };
+  
+  const conditions = [];
+  
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(orders.customerName, `%${filters.search}%`),
+        like(orders.customerPhone, `%${filters.search}%`),
+        like(orders.orderNumber, `%${filters.search}%`)
+      )
+    );
+  }
+  
+  if (filters?.status) {
+    conditions.push(eq(orders.status, filters.status as Order['status']));
+  }
+  
+  if (filters?.packageId) {
+    conditions.push(eq(orders.packageId, filters.packageId));
+  }
+  
+  if (filters?.dateFrom) {
+    conditions.push(gte(orders.createdAt, filters.dateFrom));
+  }
+  
+  if (filters?.dateTo) {
+    conditions.push(lte(orders.createdAt, filters.dateTo));
+  }
+  
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  
+  const [ordersResult, countResult] = await Promise.all([
+    db.select()
+      .from(orders)
+      .where(whereClause)
+      .orderBy(desc(orders.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db.select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(whereClause),
+  ]);
+  
+  return {
+    orders: ordersResult,
+    total: Number(countResult[0]?.count || 0),
+  };
+}
+
+export async function updateOrder(id: number, data: Partial<InsertOrder>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(orders).set(data).where(eq(orders.id, id));
+}
+
+export async function updateOrderStatus(id: number, status: Order['status']): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(orders).set({ status }).where(eq(orders.id, id));
+}
+
+export async function deleteOrder(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(orders).where(eq(orders.id, id));
+}
+
+// ==================== Statistics Operations ====================
+
+export interface OrderStats {
+  totalOrders: number;
+  totalSales: number;
+  totalCommission: number;
+  pendingOrders: number;
+  completedOrders: number;
+  packageStats: { packageName: string; count: number; sales: number }[];
+}
+
+export async function getOrderStats(): Promise<OrderStats> {
+  const db = await getDb();
+  if (!db) {
+    return {
+      totalOrders: 0,
+      totalSales: 0,
+      totalCommission: 0,
+      pendingOrders: 0,
+      completedOrders: 0,
+      packageStats: [],
+    };
+  }
+  
+  const [
+    totalResult,
+    pendingResult,
+    completedResult,
+    packageStatsResult,
+  ] = await Promise.all([
+    db.select({
+      count: sql<number>`count(*)`,
+      sales: sql<number>`COALESCE(SUM(orderAmount), 0)`,
+      commission: sql<number>`COALESCE(SUM(commission), 0)`,
+    }).from(orders),
+    db.select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(eq(orders.status, "pending")),
+    db.select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(eq(orders.status, "completed")),
+    db.select({
+      packageName: orders.packageName,
+      count: sql<number>`count(*)`,
+      sales: sql<number>`COALESCE(SUM(orderAmount), 0)`,
+    })
+      .from(orders)
+      .groupBy(orders.packageName),
+  ]);
+  
+  return {
+    totalOrders: Number(totalResult[0]?.count || 0),
+    totalSales: Number(totalResult[0]?.sales || 0),
+    totalCommission: Number(totalResult[0]?.commission || 0),
+    pendingOrders: Number(pendingResult[0]?.count || 0),
+    completedOrders: Number(completedResult[0]?.count || 0),
+    packageStats: packageStatsResult.map(p => ({
+      packageName: p.packageName,
+      count: Number(p.count),
+      sales: Number(p.sales),
+    })),
+  };
+}
+
+export async function getRecentOrders(limit = 10): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(orders)
+    .orderBy(desc(orders.createdAt))
+    .limit(limit);
+}
+
+export async function getOrdersForExport(filters?: OrderFilters): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(orders.customerName, `%${filters.search}%`),
+        like(orders.customerPhone, `%${filters.search}%`),
+        like(orders.orderNumber, `%${filters.search}%`)
+      )
+    );
+  }
+  
+  if (filters?.status) {
+    conditions.push(eq(orders.status, filters.status as Order['status']));
+  }
+  
+  if (filters?.packageId) {
+    conditions.push(eq(orders.packageId, filters.packageId));
+  }
+  
+  if (filters?.dateFrom) {
+    conditions.push(gte(orders.createdAt, filters.dateFrom));
+  }
+  
+  if (filters?.dateTo) {
+    conditions.push(lte(orders.createdAt, filters.dateTo));
+  }
+  
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  
+  return db.select()
+    .from(orders)
+    .where(whereClause)
+    .orderBy(desc(orders.createdAt));
+}
