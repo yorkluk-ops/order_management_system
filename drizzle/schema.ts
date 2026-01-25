@@ -79,3 +79,37 @@ export const orders = mysqlTable("orders", {
 
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
+
+/**
+ * 產品資料表 - 儲存自建產品
+ */
+export const products = mysqlTable("products", {
+  id: int("id").autoincrement().primaryKey(),
+  sku: varchar("sku", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  color: varchar("color", { length: 100 }),
+  price: decimal("price", { precision: 10, scale: 2 }).default("0"),
+  isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+
+/**
+ * 訂單產品關聯表 - 儲存訂單中的產品明細
+ */
+export const orderProducts = mysqlTable("orderProducts", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  productId: int("productId"),
+  sku: varchar("sku", { length: 64 }).notNull(),
+  productName: varchar("productName", { length: 255 }).notNull(),
+  color: varchar("color", { length: 100 }),
+  quantity: int("quantity").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OrderProduct = typeof orderProducts.$inferSelect;
+export type InsertOrderProduct = typeof orderProducts.$inferInsert;

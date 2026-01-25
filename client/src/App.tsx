@@ -11,6 +11,7 @@ import OrderDetail from "./pages/OrderDetail";
 import OrderEdit from "./pages/OrderEdit";
 import Export from "./pages/Export";
 import AIAnalysis from "./pages/AIAnalysis";
+import ProductList from "./pages/ProductList";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/orders/:id/edit" component={OrderEdit} />
       <Route path="/export" component={Export} />
       <Route path="/ai-analysis" component={AIAnalysis} />
+      <Route path="/products" component={ProductList} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

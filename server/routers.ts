@@ -13,10 +13,27 @@ import {
   getOrderStats,
   getRecentOrders,
   getOrdersForExport,
+  getAllProducts,
+  getProductById,
+  getProductBySku,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  addOrderProducts,
+  getOrderProducts,
+  deleteOrderProducts,
 } from "./db";
 import { PACKAGE_DEFINITIONS, ORDER_STATUS, getAllPackagesFlat } from "../shared/packages";
 import { notifyOwner } from "./_core/notification";
 import { invokeLLM } from "./_core/llm";
+
+// 日期格式化函數 YYYYMMDD
+function formatDateYYYYMMDD(date: Date): string {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}${month}${day}`;
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -202,7 +219,7 @@ export const appRouter = router({
           訂單金額: Number(order.orderAmount),
           佣金: Number(order.commission),
           送貨地址: order.deliveryAddress,
-          送貨日期: order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString("zh-TW") : "",
+          送貨日期: order.deliveryDate ? formatDateYYYYMMDD(new Date(order.deliveryDate)) : "",
           送貨時段: order.deliveryTimeSlot || "",
           訂單狀態: ORDER_STATUS[order.status as keyof typeof ORDER_STATUS]?.label || order.status,
           備註: order.notes || "",
@@ -222,6 +239,85 @@ export const appRouter = router({
     overview: protectedProcedure.query(async () => {
       return getOrderStats();
     }),
+  }),
+
+  // 產品管理
+  products: router({
+    list: protectedProcedure.query(async () => {
+      return getAllProducts();
+    }),
+
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getProductById(input.id);
+      }),
+
+    getBySku: protectedProcedure
+      .input(z.object({ sku: z.string() }))
+      .query(async ({ input }) => {
+        return getProductBySku(input.sku);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        sku: z.string().min(1, "請輸入 SKU"),
+        name: z.string().min(1, "請輸入產品名稱"),
+        color: z.string().optional(),
+        price: z.number().nonnegative().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // 檢查 SKU 是否已存在
+        const existing = await getProductBySku(input.sku);
+        if (existing) {
+          throw new Error("SKU 已存在");
+        }
+
+        const id = await createProduct({
+          sku: input.sku,
+          name: input.name,
+          color: input.color || null,
+          price: input.price?.toString() || "0",
+          isActive: "yes",
+        });
+
+        return { id, sku: input.sku };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        sku: z.string().min(1).optional(),
+        name: z.string().min(1).optional(),
+        color: z.string().optional(),
+        price: z.number().nonnegative().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: Record<string, unknown> = {};
+
+        if (data.sku) {
+          // 檢查新 SKU 是否與其他產品衝突
+          const existing = await getProductBySku(data.sku);
+          if (existing && existing.id !== id) {
+            throw new Error("SKU 已存在");
+          }
+          updateData.sku = data.sku;
+        }
+        if (data.name) updateData.name = data.name;
+        if (data.color !== undefined) updateData.color = data.color || null;
+        if (data.price !== undefined) updateData.price = data.price.toString();
+
+        await updateProduct(id, updateData as any);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteProduct(input.id);
+        return { success: true };
+      }),
   }),
 
   // AI 分析

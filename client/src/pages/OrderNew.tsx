@@ -11,12 +11,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Save, Package, User, Truck, DollarSign } from "lucide-react";
+import { ArrowLeft, Save, Package, User, Truck, DollarSign, Plus, X, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { PACKAGE_DEFINITIONS } from "../../../shared/packages";
+
+interface SelectedProduct {
+  productId: number;
+  sku: string;
+  name: string;
+  color: string;
+  quantity: number;
+}
 
 export default function OrderNew() {
   const [, setLocation] = useLocation();
@@ -31,11 +40,18 @@ export default function OrderNew() {
   const [deliveryDate, setDeliveryDate] = useState("");
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // Product selection
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [showProductSelector, setShowProductSelector] = useState(false);
 
   // Computed values
   const [orderAmount, setOrderAmount] = useState(0);
   const [commission, setCommission] = useState(0);
   const [packageName, setPackageName] = useState("");
+
+  // Fetch products
+  const { data: products } = trpc.products.list.useQuery();
 
   // Get selected package details
   const selectedPkg = PACKAGE_DEFINITIONS.find(p => p.code === selectedPackage);
@@ -87,6 +103,13 @@ export default function OrderNew() {
       return;
     }
 
+    // Build product list for notes
+    const productNotes = selectedProducts.length > 0
+      ? `\n\n【產品明細】\n${selectedProducts.map(p => 
+          `- ${p.sku} | ${p.name}${p.color ? ` (${p.color})` : ''} x${p.quantity}`
+        ).join('\n')}`
+      : '';
+
     createMutation.mutate({
       customerName,
       customerPhone,
@@ -99,8 +122,46 @@ export default function OrderNew() {
       deliveryAddress,
       deliveryDate: deliveryDate || undefined,
       deliveryTimeSlot: deliveryTimeSlot || undefined,
-      notes: notes || undefined,
+      notes: (notes || '') + productNotes || undefined,
     });
+  };
+
+  const handleAddProduct = (product: NonNullable<typeof products>[0]) => {
+    const existing = selectedProducts.find(p => p.productId === product.id);
+    if (existing) {
+      setSelectedProducts(prev =>
+        prev.map(p =>
+          p.productId === product.id
+            ? { ...p, quantity: p.quantity + 1 }
+            : p
+        )
+      );
+    } else {
+      setSelectedProducts(prev => [
+        ...prev,
+        {
+          productId: product.id,
+          sku: product.sku,
+          name: product.name,
+          color: product.color || "",
+          quantity: 1,
+        },
+      ]);
+    }
+    setShowProductSelector(false);
+  };
+
+  const handleRemoveProduct = (productId: number) => {
+    setSelectedProducts(prev => prev.filter(p => p.productId !== productId));
+  };
+
+  const handleUpdateQuantity = (productId: number, quantity: number) => {
+    if (quantity < 1) return;
+    setSelectedProducts(prev =>
+      prev.map(p =>
+        p.productId === productId ? { ...p, quantity } : p
+      )
+    );
   };
 
   return (
@@ -252,6 +313,130 @@ export default function OrderNew() {
             </CardContent>
           </Card>
 
+          {/* Product Selection */}
+          <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <ShoppingBag className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">產品明細</CardTitle>
+                    <CardDescription>選擇訂單中的產品（選填）</CardDescription>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProductSelector(!showProductSelector)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  新增產品
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Product Selector */}
+              {showProductSelector && products && products.length > 0 && (
+                <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                  <Label>選擇產品</Label>
+                  <div className="grid gap-2 max-h-48 overflow-y-auto">
+                    {products.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => handleAddProduct(product)}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <div>
+                          <div className="font-mono text-sm text-muted-foreground">{product.sku}</div>
+                          <div className="font-medium">{product.name}</div>
+                          {product.color && (
+                            <div className="text-sm text-muted-foreground">{product.color}</div>
+                          )}
+                        </div>
+                        <Plus className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {showProductSelector && (!products || products.length === 0) && (
+                <div className="p-4 rounded-lg border bg-muted/30 text-center">
+                  <p className="text-muted-foreground mb-2">尚無產品</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLocation("/products")}
+                  >
+                    前往新增產品
+                  </Button>
+                </div>
+              )}
+
+              {/* Selected Products */}
+              {selectedProducts.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedProducts.map((product) => (
+                    <div
+                      key={product.productId}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-background"
+                    >
+                      <div className="flex-1">
+                        <div className="font-mono text-sm text-muted-foreground">{product.sku}</div>
+                        <div className="font-medium">{product.name}</div>
+                        {product.color && (
+                          <div className="text-sm text-muted-foreground">{product.color}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleUpdateQuantity(product.productId, product.quantity - 1)}
+                          >
+                            -
+                          </Button>
+                          <span className="w-8 text-center">{product.quantity}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleUpdateQuantity(product.productId, product.quantity + 1)}
+                          >
+                            +
+                          </Button>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          onClick={() => handleRemoveProduct(product.productId)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>尚未選擇產品</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Delivery Information */}
           <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
@@ -341,6 +526,13 @@ export default function OrderNew() {
                     ${commission.toLocaleString()}
                   </span>
                 </div>
+                {selectedProducts.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">
+                      已選擇 {selectedProducts.length} 項產品，共 {selectedProducts.reduce((sum, p) => sum + p.quantity, 0)} 件
+                    </span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
