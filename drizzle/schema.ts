@@ -31,6 +31,8 @@ export const packages = mysqlTable("packages", {
   originalValue: decimal("originalValue", { precision: 10, scale: 2 }),
   savings: varchar("savings", { length: 100 }),
   freeGift: text("freeGift"),
+  // 贈品連結產品 ID
+  giftProductId: int("giftProductId"),
   isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

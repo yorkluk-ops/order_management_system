@@ -32,6 +32,7 @@ interface SelectedPackage {
   price: number;
   commission: number;
   quantity: number;
+  giftProductId: number | null;
 }
 
 export default function OrderNew() {
@@ -155,6 +156,10 @@ export default function OrderNew() {
         color: g.color || undefined,
         quantity: g.quantity,
       })),
+      // 傳送套餐贈品產品 ID（用於扣除庫存）
+      packageGiftProductIds: selectedPackages
+        .filter(pkg => pkg.giftProductId !== null)
+        .flatMap(pkg => Array(pkg.quantity).fill(pkg.giftProductId as number)),
     });
   };
 
@@ -186,6 +191,7 @@ export default function OrderNew() {
           price: Number(pkg.price),
           commission: Number(pkg.commission),
           quantity: 1,
+          giftProductId: pkg.giftProductId || null,
         },
       ]);
       toast.success(`已新增 ${pkg.name}`);

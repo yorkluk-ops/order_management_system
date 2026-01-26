@@ -23,6 +23,7 @@ import {
   getOrderProducts,
   deleteOrderProducts,
   updateProductStockBySku,
+  updateProductStock,
   getMonthlyDeliveryReport,
   getAllPackages,
   getPackageById,
@@ -89,6 +90,7 @@ export const appRouter = router({
         originalValue: z.number().nonnegative().optional(),
         savings: z.string().optional(),
         freeGift: z.string().optional(),
+        giftProductId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         // 檢查代碼是否已存在
@@ -106,6 +108,7 @@ export const appRouter = router({
           originalValue: input.originalValue?.toString() || null,
           savings: input.savings || null,
           freeGift: input.freeGift || null,
+          giftProductId: input.giftProductId || null,
           isActive: "yes",
         });
 
@@ -123,6 +126,7 @@ export const appRouter = router({
         originalValue: z.number().nonnegative().optional(),
         savings: z.string().optional(),
         freeGift: z.string().optional(),
+        giftProductId: z.number().nullable().optional(),
         isActive: z.enum(["yes", "no"]).optional(),
       }))
       .mutation(async ({ input }) => {
@@ -143,6 +147,7 @@ export const appRouter = router({
         if (data.originalValue !== undefined) updateData.originalValue = data.originalValue?.toString() || null;
         if (data.savings !== undefined) updateData.savings = data.savings || null;
         if (data.freeGift !== undefined) updateData.freeGift = data.freeGift || null;
+        if (data.giftProductId !== undefined) updateData.giftProductId = data.giftProductId;
         if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
         await updatePackage(id, updateData as any);
@@ -188,6 +193,8 @@ export const appRouter = router({
           color: z.string().optional(),
           quantity: z.number().positive(),
         })).optional(),
+        // 套餐贈品產品 ID 列表（用於扣除庫存）
+        packageGiftProductIds: z.array(z.number()).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const result = await createOrder({
@@ -225,6 +232,13 @@ export const appRouter = router({
           // 扣除香港庫存（允許負數）
           for (const product of allProducts) {
             await updateProductStockBySku(product.sku, -product.quantity);
+          }
+        }
+
+        // 扣除套餐贈品的庫存
+        if (input.packageGiftProductIds && input.packageGiftProductIds.length > 0) {
+          for (const productId of input.packageGiftProductIds) {
+            await updateProductStock(productId, -1);
           }
         }
 

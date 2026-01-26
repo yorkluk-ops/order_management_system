@@ -30,6 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { Package, Plus, Pencil, Trash2, Gift, DollarSign, Percent } from "lucide-react";
@@ -45,6 +52,7 @@ interface PackageFormData {
   originalValue: number;
   savings: string;
   freeGift: string;
+  giftProductId: number | null;
 }
 
 const emptyFormData: PackageFormData = {
@@ -56,6 +64,7 @@ const emptyFormData: PackageFormData = {
   originalValue: 0,
   savings: "",
   freeGift: "",
+  giftProductId: null,
 };
 
 export default function PackageList() {
@@ -67,6 +76,10 @@ export default function PackageList() {
 
   const utils = trpc.useUtils();
   const { data: packages, isLoading } = trpc.packages.listAll.useQuery();
+  const { data: products } = trpc.products.list.useQuery();
+
+  // 篩選出贈品類產品
+  const giftProducts = products?.filter(p => p.isGift === "yes") || [];
 
   const createMutation = trpc.packages.create.useMutation({
     onSuccess: () => {
@@ -125,6 +138,7 @@ export default function PackageList() {
       originalValue: Number(pkg.originalValue || 0),
       savings: pkg.savings || "",
       freeGift: pkg.freeGift || "",
+      giftProductId: pkg.giftProductId || null,
     });
     setIsDialogOpen(true);
   };
@@ -156,6 +170,13 @@ export default function PackageList() {
     if (deletingId) {
       deleteMutation.mutate({ id: deletingId });
     }
+  };
+
+  // 根據 giftProductId 找到對應的產品名稱
+  const getGiftProductName = (giftProductId: number | null) => {
+    if (!giftProductId) return null;
+    const product = products?.find(p => p.id === giftProductId);
+    return product ? `${product.sku} - ${product.name}` : null;
   };
 
   const activePackages = packages?.filter(p => p.isActive === "yes") || [];
@@ -265,7 +286,14 @@ export default function PackageList() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {pkg.freeGift ? (
+                          {pkg.giftProductId ? (
+                            <div className="flex items-center gap-1 text-amber-600">
+                              <Gift className="h-3 w-3" />
+                              <span className="text-xs truncate max-w-[100px]">
+                                {getGiftProductName(pkg.giftProductId) || pkg.freeGift}
+                              </span>
+                            </div>
+                          ) : pkg.freeGift ? (
                             <div className="flex items-center gap-1 text-amber-600">
                               <Gift className="h-3 w-3" />
                               <span className="text-xs truncate max-w-[100px]">{pkg.freeGift}</span>
@@ -407,10 +435,7 @@ export default function PackageList() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="freeGift" className="flex items-center gap-1">
-                      <Gift className="h-3 w-3" />
-                      贈品
-                    </Label>
+                    <Label htmlFor="freeGift">贈品說明（文字）</Label>
                     <Input
                       id="freeGift"
                       placeholder="例如：SHNUGGLE 玩具收納櫃"
@@ -418,6 +443,55 @@ export default function PackageList() {
                       onChange={(e) => setFormData({ ...formData, freeGift: e.target.value })}
                     />
                   </div>
+                </div>
+
+                {/* 贈品產品選擇 */}
+                <div className="space-y-2">
+                  <Label htmlFor="giftProductId" className="flex items-center gap-1">
+                    <Gift className="h-3 w-3" />
+                    贈品產品（連結庫存）
+                  </Label>
+                  <Select
+                    value={formData.giftProductId?.toString() || "none"}
+                    onValueChange={(value) => setFormData({ 
+                      ...formData, 
+                      giftProductId: value === "none" ? null : Number(value) 
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="選擇贈品產品（可選）" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">不選擇贈品產品</SelectItem>
+                      {giftProducts.length === 0 ? (
+                        <SelectItem value="no-gift" disabled>
+                          尚無贈品類產品，請先在產品管理中標記贈品
+                        </SelectItem>
+                      ) : (
+                        giftProducts.map((product) => (
+                          <SelectItem key={product.id} value={product.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs bg-pink-50 text-pink-600 border-pink-200">
+                                贈品
+                              </Badge>
+                              <span>{product.sku}</span>
+                              <span className="text-muted-foreground">|</span>
+                              <span>{product.name}</span>
+                              {product.color && (
+                                <span className="text-muted-foreground">({product.color})</span>
+                              )}
+                              <span className="text-muted-foreground ml-2">
+                                庫存: HK {product.stockHK}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    選擇贈品產品後，建立訂單時會自動扣除該產品的香港庫存
+                  </p>
                 </div>
               </div>
               <DialogFooter>
