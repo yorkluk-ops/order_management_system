@@ -66,6 +66,7 @@ export const orders = mysqlTable("orders", {
   deliveryAddress: text("deliveryAddress").notNull(),
   deliveryDate: timestamp("deliveryDate"),
   deliveryTimeSlot: varchar("deliveryTimeSlot", { length: 50 }),
+  trackingNumber: varchar("trackingNumber", { length: 100 }),
   
   // 訂單狀態
   status: mysqlEnum("status", ["pending", "confirmed", "delivering", "completed", "cancelled"]).default("pending").notNull(),

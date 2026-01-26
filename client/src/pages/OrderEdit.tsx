@@ -38,6 +38,7 @@ export default function OrderEdit() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
   const [notes, setNotes] = useState("");
   const [orderAmount, setOrderAmount] = useState(0);
   const [commission, setCommission] = useState(0);
@@ -78,6 +79,7 @@ export default function OrderEdit() {
       setDeliveryAddress(order.deliveryAddress);
       setDeliveryDate(order.deliveryDate ? new Date(order.deliveryDate).toISOString().split("T")[0] : "");
       setDeliveryTimeSlot(order.deliveryTimeSlot || "");
+      setTrackingNumber(order.trackingNumber || "");
       setNotes(order.notes || "");
       setOrderAmount(Number(order.orderAmount));
       setCommission(Number(order.commission));
@@ -201,6 +203,7 @@ export default function OrderEdit() {
       deliveryAddress,
       deliveryDate: deliveryDate || undefined,
       deliveryTimeSlot: deliveryTimeSlot || undefined,
+      trackingNumber: trackingNumber || undefined,
       notes: notes || undefined,
       orderAmount,
       commission,
@@ -551,6 +554,15 @@ export default function OrderEdit() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="trackingNumber">快遞號</Label>
+                <Input
+                  id="trackingNumber"
+                  placeholder="輸入本地送貨快遞單號（選填）"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">備註</Label>

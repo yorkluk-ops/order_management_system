@@ -304,9 +304,13 @@ export default function OrderDetail() {
                 <span className="text-sm text-muted-foreground">送貨日期</span>
                 <span>{formatDate(order.deliveryDate)}</span>
               </div>
-              <div className="flex justify-between items-center py-2">
+              <div className="flex justify-between items-center py-2 border-b border-border/50">
                 <span className="text-sm text-muted-foreground">送貨時段</span>
                 <span>{getTimeSlotLabel(order.deliveryTimeSlot)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-sm text-muted-foreground">快遞號</span>
+                <span>{order.trackingNumber || "-"}</span>
               </div>
             </CardContent>
           </Card>

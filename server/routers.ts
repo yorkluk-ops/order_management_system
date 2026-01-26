@@ -296,6 +296,7 @@ export const appRouter = router({
         deliveryAddress: z.string().optional(),
         deliveryDate: z.string().optional(),
         deliveryTimeSlot: z.string().optional(),
+        trackingNumber: z.string().optional(),
         notes: z.string().optional(),
         // 產品明細
         products: z.array(z.object({
@@ -326,6 +327,7 @@ export const appRouter = router({
         if (data.deliveryAddress) updateData.deliveryAddress = data.deliveryAddress;
         if (data.deliveryDate !== undefined) updateData.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate) : null;
         if (data.deliveryTimeSlot !== undefined) updateData.deliveryTimeSlot = data.deliveryTimeSlot || null;
+        if (data.trackingNumber !== undefined) updateData.trackingNumber = data.trackingNumber || null;
         if (data.notes !== undefined) updateData.notes = data.notes || null;
 
         await updateOrder(id, updateData as any);

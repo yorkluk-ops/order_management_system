@@ -43,6 +43,13 @@
       "when": 1769409840508,
       "tag": "0005_gifted_ender_wiggin",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1769416631865,
+      "tag": "0006_free_chronomancer",
+      "breakpoints": true
     }
   ]
 }
