@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { Plus, Edit, Trash2, Package, Search, Palette } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Search, Palette, Gift, Warehouse } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +42,9 @@ interface ProductFormData {
   name: string;
   color: string;
   price: number;
+  stockHK: number;
+  stockCN: number;
+  isGift: boolean;
 }
 
 const initialFormData: ProductFormData = {
@@ -47,6 +52,9 @@ const initialFormData: ProductFormData = {
   name: "",
   color: "",
   price: 0,
+  stockHK: 0,
+  stockCN: 0,
+  isGift: false,
 };
 
 export default function ProductList() {
@@ -115,6 +123,9 @@ export default function ProductList() {
       name: product.name,
       color: product.color || "",
       price: Number(product.price) || 0,
+      stockHK: product.stockHK || 0,
+      stockCN: product.stockCN || 0,
+      isGift: product.isGift === "yes",
     });
     setShowEditDialog(true);
   };
@@ -135,6 +146,9 @@ export default function ProductList() {
       name: formData.name,
       color: formData.color || undefined,
       price: formData.price || undefined,
+      stockHK: formData.stockHK || 0,
+      stockCN: formData.stockCN || 0,
+      isGift: formData.isGift ? "yes" : "no",
     });
   };
 
@@ -150,6 +164,9 @@ export default function ProductList() {
       name: formData.name,
       color: formData.color || undefined,
       price: formData.price || undefined,
+      stockHK: formData.stockHK || 0,
+      stockCN: formData.stockCN || 0,
+      isGift: formData.isGift ? "yes" : "no",
     });
   };
 
@@ -159,6 +176,108 @@ export default function ProductList() {
     }
   };
 
+  // 產品表單組件
+  const ProductForm = ({ onSubmit, isEdit = false }: { onSubmit: (e: React.FormEvent) => void; isEdit?: boolean }) => (
+    <form onSubmit={onSubmit}>
+      <div className="space-y-4 py-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="sku">SKU *</Label>
+            <Input
+              id="sku"
+              placeholder="例如：EUFY-E20-BLK"
+              value={formData.sku}
+              onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="color">顏色</Label>
+            <Input
+              id="color"
+              placeholder="例如：黑色"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="name">產品名稱 *</Label>
+          <Input
+            id="name"
+            placeholder="例如：EUFY E20 掃地機器人"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="price">價格 (HK$)</Label>
+            <Input
+              id="price"
+              type="number"
+              min="0"
+              placeholder="0"
+              value={formData.price || ""}
+              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="stockHK">香港庫存</Label>
+            <Input
+              id="stockHK"
+              type="number"
+              min="0"
+              placeholder="0"
+              value={formData.stockHK || ""}
+              onChange={(e) => setFormData({ ...formData, stockHK: Number(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="stockCN">內地庫存</Label>
+            <Input
+              id="stockCN"
+              type="number"
+              min="0"
+              placeholder="0"
+              value={formData.stockCN || ""}
+              onChange={(e) => setFormData({ ...formData, stockCN: Number(e.target.value) || 0 })}
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div className="space-y-0.5">
+            <Label htmlFor="isGift" className="flex items-center gap-2">
+              <Gift className="h-4 w-4 text-pink-500" />
+              標記為贈品
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              贈品會在新增訂單時顯示在贈品選擇區域
+            </p>
+          </div>
+          <Switch
+            id="isGift"
+            checked={formData.isGift}
+            onCheckedChange={(checked) => setFormData({ ...formData, isGift: checked })}
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => isEdit ? setShowEditDialog(false) : setShowAddDialog(false)}
+        >
+          取消
+        </Button>
+        <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+          {(createMutation.isPending || updateMutation.isPending) ? "處理中..." : isEdit ? "更新" : "建立"}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -166,7 +285,7 @@ export default function ProductList() {
         <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="page-title">產品管理</h1>
-            <p className="page-description">管理您的產品目錄（SKU、名稱、顏色）</p>
+            <p className="page-description">管理您的產品目錄（SKU、名稱、顏色、庫存、贈品）</p>
           </div>
           <Button onClick={handleAdd}>
             <Plus className="mr-2 h-4 w-4" />
@@ -219,6 +338,19 @@ export default function ProductList() {
                       <TableHead>SKU</TableHead>
                       <TableHead>產品名稱</TableHead>
                       <TableHead>顏色</TableHead>
+                      <TableHead className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Warehouse className="h-4 w-4" />
+                          香港庫存
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Warehouse className="h-4 w-4" />
+                          內地庫存
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-center">類型</TableHead>
                       <TableHead className="text-right">操作</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -237,6 +369,26 @@ export default function ProductList() {
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className={product.stockHK > 0 ? "text-green-600 font-medium" : "text-muted-foreground"}>
+                            {product.stockHK}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className={product.stockCN > 0 ? "text-blue-600 font-medium" : "text-muted-foreground"}>
+                            {product.stockCN}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {product.isGift === "yes" ? (
+                            <Badge variant="secondary" className="bg-pink-100 text-pink-700 hover:bg-pink-100">
+                              <Gift className="h-3 w-3 mr-1" />
+                              贈品
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">一般產品</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -281,115 +433,27 @@ export default function ProductList() {
 
       {/* Add Product Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>新增產品</DialogTitle>
             <DialogDescription>
               填寫產品資料以建立新產品
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmitAdd}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU *</Label>
-                <Input
-                  id="sku"
-                  placeholder="例如：EUFY-E20-BLK"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">產品名稱 *</Label>
-                <Input
-                  id="name"
-                  placeholder="例如：EUFY E20 掃地機器人"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="color">顏色</Label>
-                <Input
-                  id="color"
-                  placeholder="例如：黑色、白色、奶白色"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowAddDialog(false)}
-              >
-                取消
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "建立中..." : "建立產品"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <ProductForm onSubmit={handleSubmitAdd} />
         </DialogContent>
       </Dialog>
 
       {/* Edit Product Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>編輯產品</DialogTitle>
             <DialogDescription>
               修改產品資料
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmitEdit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-sku">SKU *</Label>
-                <Input
-                  id="edit-sku"
-                  placeholder="例如：EUFY-E20-BLK"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">產品名稱 *</Label>
-                <Input
-                  id="edit-name"
-                  placeholder="例如：EUFY E20 掃地機器人"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-color">顏色</Label>
-                <Input
-                  id="edit-color"
-                  placeholder="例如：黑色、白色、奶白色"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowEditDialog(false)}
-              >
-                取消
-              </Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? "儲存中..." : "儲存變更"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <ProductForm onSubmit={handleSubmitEdit} isEdit />
         </DialogContent>
       </Dialog>
 
@@ -397,9 +461,9 @@ export default function ProductList() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>確認刪除產品？</AlertDialogTitle>
+            <AlertDialogTitle>確認刪除</AlertDialogTitle>
             <AlertDialogDescription>
-              此操作將刪除該產品，但不會影響已建立的訂單。
+              確定要刪除此產品嗎？此操作無法復原。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -408,7 +472,7 @@ export default function ProductList() {
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              確認刪除
+              刪除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

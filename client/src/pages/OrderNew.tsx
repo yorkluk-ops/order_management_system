@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Save, Package, User, Truck, DollarSign, X, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Save, Package, User, Truck, DollarSign, X, ShoppingBag, Gift, Plus, Minus } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -44,6 +44,10 @@ export default function OrderNew() {
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   
+  // Gift selection
+  const [selectedGifts, setSelectedGifts] = useState<SelectedProduct[]>([]);
+  const [selectedGiftId, setSelectedGiftId] = useState<string>("");
+  
   // Custom amount for "OTHER" package
   const [customAmount, setCustomAmount] = useState<number>(0);
   const [customCommission, setCustomCommission] = useState<number>(0);
@@ -55,6 +59,17 @@ export default function OrderNew() {
 
   // Fetch products
   const { data: products } = trpc.products.list.useQuery();
+
+  // 分離一般產品和贈品
+  const regularProducts = useMemo(() => 
+    products?.filter(p => p.isGift !== "yes") || [], 
+    [products]
+  );
+  
+  const giftProducts = useMemo(() => 
+    products?.filter(p => p.isGift === "yes") || [], 
+    [products]
+  );
 
   // Get selected package details
   const selectedPkg = PACKAGE_DEFINITIONS.find(p => p.code === selectedPackage);
@@ -117,13 +132,6 @@ export default function OrderNew() {
       return;
     }
 
-    // Build product list for notes
-    const productNotes = selectedProducts.length > 0
-      ? `\n\n【產品明細】\n${selectedProducts.map(p => 
-          `- ${p.sku} | ${p.name}${p.color ? ` (${p.color})` : ''} x${p.quantity}`
-        ).join('\n')}`
-      : '';
-
     createMutation.mutate({
       customerName,
       customerPhone,
@@ -136,16 +144,30 @@ export default function OrderNew() {
       deliveryAddress,
       deliveryDate: deliveryDate || undefined,
       deliveryTimeSlot: deliveryTimeSlot || undefined,
-      notes: (notes || '') + productNotes || undefined,
+      notes: notes || undefined,
+      // 傳送產品明細
+      products: selectedProducts.map(p => ({
+        sku: p.sku,
+        productName: p.name,
+        color: p.color || undefined,
+        quantity: p.quantity,
+      })),
+      // 傳送贈品明細
+      gifts: selectedGifts.map(g => ({
+        sku: g.sku,
+        productName: g.name,
+        color: g.color || undefined,
+        quantity: g.quantity,
+      })),
     });
   };
 
   // Handle product selection from dropdown
   const handleProductSelect = (productIdStr: string) => {
-    if (!productIdStr || !products) return;
+    if (!productIdStr || !regularProducts) return;
     
     const productId = parseInt(productIdStr);
-    const product = products.find(p => p.id === productId);
+    const product = regularProducts.find(p => p.id === productId);
     if (!product) return;
 
     const existing = selectedProducts.find(p => p.productId === product.id);
@@ -176,8 +198,48 @@ export default function OrderNew() {
     setSelectedProductId("");
   };
 
+  // Handle gift selection from dropdown
+  const handleGiftSelect = (giftIdStr: string) => {
+    if (!giftIdStr || !giftProducts) return;
+    
+    const giftId = parseInt(giftIdStr);
+    const gift = giftProducts.find(p => p.id === giftId);
+    if (!gift) return;
+
+    const existing = selectedGifts.find(g => g.productId === gift.id);
+    if (existing) {
+      setSelectedGifts(prev =>
+        prev.map(g =>
+          g.productId === gift.id
+            ? { ...g, quantity: g.quantity + 1 }
+            : g
+        )
+      );
+      toast.success(`${gift.name} 數量 +1`);
+    } else {
+      setSelectedGifts(prev => [
+        ...prev,
+        {
+          productId: gift.id,
+          sku: gift.sku,
+          name: gift.name,
+          color: gift.color || "",
+          quantity: 1,
+        },
+      ]);
+      toast.success(`已新增贈品 ${gift.name}`);
+    }
+    
+    // Reset dropdown
+    setSelectedGiftId("");
+  };
+
   const handleRemoveProduct = (productId: number) => {
     setSelectedProducts(prev => prev.filter(p => p.productId !== productId));
+  };
+
+  const handleRemoveGift = (giftId: number) => {
+    setSelectedGifts(prev => prev.filter(g => g.productId !== giftId));
   };
 
   const handleUpdateQuantity = (productId: number, quantity: number) => {
@@ -189,12 +251,26 @@ export default function OrderNew() {
     );
   };
 
+  const handleUpdateGiftQuantity = (giftId: number, quantity: number) => {
+    if (quantity < 1) return;
+    setSelectedGifts(prev =>
+      prev.map(g =>
+        g.productId === giftId ? { ...g, quantity } : g
+      )
+    );
+  };
+
   // Filter out already selected products from dropdown
   const availableProducts = useMemo(() => {
-    if (!products) return [];
     const selectedIds = new Set(selectedProducts.map(p => p.productId));
-    return products.filter(p => !selectedIds.has(p.id));
-  }, [products, selectedProducts]);
+    return regularProducts.filter(p => !selectedIds.has(p.id));
+  }, [regularProducts, selectedProducts]);
+
+  // Filter out already selected gifts from dropdown
+  const availableGifts = useMemo(() => {
+    const selectedIds = new Set(selectedGifts.map(g => g.productId));
+    return giftProducts.filter(g => !selectedIds.has(g.id));
+  }, [giftProducts, selectedGifts]);
 
   return (
     <DashboardLayout>
@@ -422,12 +498,12 @@ export default function OrderNew() {
                       ))
                     ) : (
                       <SelectItem value="no-products" disabled>
-                        {products && products.length > 0 ? "所有產品已選擇" : "尚無產品，請先新增"}
+                        {regularProducts.length > 0 ? "所有產品已選擇" : "尚無產品，請先新增"}
                       </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
-                {(!products || products.length === 0) && (
+                {regularProducts.length === 0 && (
                   <Button
                     type="button"
                     variant="link"
@@ -442,47 +518,43 @@ export default function OrderNew() {
 
               {/* Selected Products List */}
               {selectedProducts.length > 0 ? (
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">已選擇的產品</Label>
+                <div className="space-y-2 border rounded-lg p-4">
                   {selectedProducts.map((product) => (
                     <div
                       key={product.productId}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-background"
+                      className="flex items-center justify-between py-2 border-b last:border-0"
                     >
                       <div className="flex-1">
-                        <div className="font-mono text-sm text-muted-foreground">{product.sku}</div>
-                        <div className="font-medium">{product.name}</div>
-                        {product.color && (
-                          <div className="text-sm text-muted-foreground">{product.color}</div>
-                        )}
+                        <p className="font-medium text-sm">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {product.sku} {product.color ? `| ${product.color}` : ""}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleUpdateQuantity(product.productId, product.quantity - 1)}
-                          >
-                            -
-                          </Button>
-                          <span className="w-8 text-center">{product.quantity}</span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleUpdateQuantity(product.productId, product.quantity + 1)}
-                          >
-                            +
-                          </Button>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateQuantity(product.productId, product.quantity - 1)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">{product.quantity}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateQuantity(product.productId, product.quantity + 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
                           onClick={() => handleRemoveProduct(product.productId)}
                         >
                           <X className="h-4 w-4" />
@@ -496,6 +568,116 @@ export default function OrderNew() {
                   <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>尚未選擇產品</p>
                   <p className="text-xs mt-1">從上方下拉選單選擇產品</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Gift Selection */}
+          <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                  <Gift className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">贈品選擇</CardTitle>
+                  <CardDescription>選擇要贈送給客戶的產品（選填）</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Gift Dropdown Selector */}
+              <div className="space-y-2">
+                <Label>新增贈品</Label>
+                <Select value={selectedGiftId} onValueChange={handleGiftSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="選擇要新增的贈品..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableGifts.length > 0 ? (
+                      availableGifts.map((gift) => (
+                        <SelectItem key={gift.id} value={gift.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <Gift className="h-3 w-3 text-amber-500" />
+                            <span className="font-mono text-xs text-muted-foreground">{gift.sku}</span>
+                            <span className="mx-1">|</span>
+                            <span>{gift.name}</span>
+                            {gift.color && (
+                              <span className="text-muted-foreground">({gift.color})</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-gifts" disabled>
+                        {giftProducts.length > 0 ? "所有贈品已選擇" : "尚無贈品，請先在產品管理中標記"}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {giftProducts.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    提示：在產品管理頁面將產品標記為「贈品」後，即可在此選擇
+                  </p>
+                )}
+              </div>
+
+              {/* Selected Gifts List */}
+              {selectedGifts.length > 0 ? (
+                <div className="space-y-2 border rounded-lg p-4 bg-amber-50/50">
+                  {selectedGifts.map((gift) => (
+                    <div
+                      key={gift.productId}
+                      className="flex items-center justify-between py-2 border-b last:border-0"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Gift className="h-4 w-4 text-amber-500" />
+                          <p className="font-medium text-sm">{gift.name}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground ml-6">
+                          {gift.sku} {gift.color ? `| ${gift.color}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateGiftQuantity(gift.productId, gift.quantity - 1)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">{gift.quantity}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateGiftQuantity(gift.productId, gift.quantity + 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleRemoveGift(gift.productId)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground border rounded-lg bg-muted/20">
+                  <Gift className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>尚未選擇贈品</p>
+                  <p className="text-xs mt-1">從上方下拉選單選擇贈品</p>
                 </div>
               )}
             </CardContent>
@@ -594,6 +776,14 @@ export default function OrderNew() {
                   <div className="pt-2 border-t">
                     <span className="text-sm text-muted-foreground">
                       已選擇 {selectedProducts.length} 項產品，共 {selectedProducts.reduce((sum, p) => sum + p.quantity, 0)} 件
+                    </span>
+                  </div>
+                )}
+                {selectedGifts.length > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-amber-600">
+                    <Gift className="h-4 w-4" />
+                    <span>
+                      已選擇 {selectedGifts.length} 項贈品，共 {selectedGifts.reduce((sum, g) => sum + g.quantity, 0)} 件
                     </span>
                   </div>
                 )}

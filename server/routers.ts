@@ -22,6 +22,8 @@ import {
   addOrderProducts,
   getOrderProducts,
   deleteOrderProducts,
+  updateProductStockBySku,
+  getMonthlyDeliveryReport,
 } from "./db";
 import { PACKAGE_DEFINITIONS, ORDER_STATUS, getAllPackagesFlat } from "../shared/packages";
 import { notifyOwner } from "./_core/notification";
@@ -66,12 +68,27 @@ export const appRouter = router({
         packageCode: z.string().min(1, "請選擇套餐"),
         packageName: z.string().min(1),
         packageVariant: z.string().optional(),
-        orderAmount: z.number().positive(),
+        orderAmount: z.number().nonnegative(),
         commission: z.number().nonnegative(),
         deliveryAddress: z.string().min(1, "請輸入送貨地址"),
         deliveryDate: z.string().optional(),
         deliveryTimeSlot: z.string().optional(),
         notes: z.string().optional(),
+        // 產品明細
+        products: z.array(z.object({
+          sku: z.string(),
+          productName: z.string(),
+          color: z.string().optional(),
+          quantity: z.number().positive(),
+          isGift: z.boolean().optional(),
+        })).optional(),
+        // 贈品明細
+        gifts: z.array(z.object({
+          sku: z.string(),
+          productName: z.string(),
+          color: z.string().optional(),
+          quantity: z.number().positive(),
+        })).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const result = await createOrder({
@@ -91,6 +108,27 @@ export const appRouter = router({
           createdBy: ctx.user.id,
         });
 
+        // 新增產品明細並扣除庫存
+        const allProducts = [
+          ...(input.products || []).map(p => ({ ...p, isGift: false })),
+          ...(input.gifts || []).map(g => ({ ...g, isGift: true })),
+        ];
+
+        if (allProducts.length > 0) {
+          await addOrderProducts(result.id, allProducts.map(p => ({
+            sku: p.sku,
+            productName: p.productName,
+            color: p.color || null,
+            quantity: p.quantity,
+            isGift: p.isGift ? "yes" : "no",
+          })));
+
+          // 扣除香港庫存（允許負數）
+          for (const product of allProducts) {
+            await updateProductStockBySku(product.sku, -product.quantity);
+          }
+        }
+
         // 發送通知給管理員
         await notifyOwner({
           title: `新訂單 ${result.orderNumber}`,
@@ -107,6 +145,8 @@ export const appRouter = router({
         packageId: z.number().optional(),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
+        deliveryDateFrom: z.string().optional(),
+        deliveryDateTo: z.string().optional(),
         limit: z.number().default(20),
         offset: z.number().default(0),
       }).optional())
@@ -117,6 +157,8 @@ export const appRouter = router({
           packageId: input.packageId,
           dateFrom: input.dateFrom ? new Date(input.dateFrom) : undefined,
           dateTo: input.dateTo ? new Date(input.dateTo) : undefined,
+          deliveryDateFrom: input.deliveryDateFrom ? new Date(input.deliveryDateFrom) : undefined,
+          deliveryDateTo: input.deliveryDateTo ? new Date(input.deliveryDateTo) : undefined,
         } : undefined;
 
         return getOrders(filters, input?.limit || 20, input?.offset || 0);
@@ -136,15 +178,29 @@ export const appRouter = router({
         customerEmail: z.string().email().optional().or(z.literal("")),
         packageName: z.string().optional(),
         packageVariant: z.string().optional(),
-        orderAmount: z.number().positive().optional(),
+        orderAmount: z.number().nonnegative().optional(),
         commission: z.number().nonnegative().optional(),
         deliveryAddress: z.string().optional(),
         deliveryDate: z.string().optional(),
         deliveryTimeSlot: z.string().optional(),
         notes: z.string().optional(),
+        // 產品明細
+        products: z.array(z.object({
+          sku: z.string(),
+          productName: z.string(),
+          color: z.string().optional(),
+          quantity: z.number().positive(),
+        })).optional(),
+        // 贈品明細
+        gifts: z.array(z.object({
+          sku: z.string(),
+          productName: z.string(),
+          color: z.string().optional(),
+          quantity: z.number().positive(),
+        })).optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, products, gifts, ...data } = input;
         const updateData: Record<string, unknown> = {};
 
         if (data.customerName) updateData.customerName = data.customerName;
@@ -152,7 +208,7 @@ export const appRouter = router({
         if (data.customerEmail !== undefined) updateData.customerEmail = data.customerEmail || null;
         if (data.packageName) updateData.packageName = data.packageName;
         if (data.packageVariant !== undefined) updateData.packageVariant = data.packageVariant || null;
-        if (data.orderAmount) updateData.orderAmount = data.orderAmount.toString();
+        if (data.orderAmount !== undefined) updateData.orderAmount = data.orderAmount.toString();
         if (data.commission !== undefined) updateData.commission = data.commission.toString();
         if (data.deliveryAddress) updateData.deliveryAddress = data.deliveryAddress;
         if (data.deliveryDate !== undefined) updateData.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate) : null;
@@ -160,7 +216,47 @@ export const appRouter = router({
         if (data.notes !== undefined) updateData.notes = data.notes || null;
 
         await updateOrder(id, updateData as any);
+
+        // 更新產品明細（如果有提供）
+        if (products !== undefined || gifts !== undefined) {
+          // 獲取舊的產品明細以恢復庫存
+          const oldProducts = await getOrderProducts(id);
+          for (const p of oldProducts) {
+            await updateProductStockBySku(p.sku, p.quantity);
+          }
+
+          // 刪除舊的產品明細
+          await deleteOrderProducts(id);
+
+          // 新增新的產品明細
+          const allProducts = [
+            ...(products || []).map(p => ({ ...p, isGift: false })),
+            ...(gifts || []).map(g => ({ ...g, isGift: true })),
+          ];
+
+          if (allProducts.length > 0) {
+            await addOrderProducts(id, allProducts.map(p => ({
+              sku: p.sku,
+              productName: p.productName,
+              color: p.color || null,
+              quantity: p.quantity,
+              isGift: p.isGift ? "yes" : "no",
+            })));
+
+            // 扣除香港庫存
+            for (const product of allProducts) {
+              await updateProductStockBySku(product.sku, -product.quantity);
+            }
+          }
+        }
+
         return { success: true };
+      }),
+
+    getProducts: protectedProcedure
+      .input(z.object({ orderId: z.number() }))
+      .query(async ({ input }) => {
+        return getOrderProducts(input.orderId);
       }),
 
     updateStatus: protectedProcedure
@@ -187,6 +283,18 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
+        // 獲取訂單產品明細以恢復庫存
+        const orderProductsList = await getOrderProducts(input.id);
+        
+        // 恢復香港庫存
+        for (const product of orderProductsList) {
+          await updateProductStockBySku(product.sku, product.quantity);
+        }
+        
+        // 刪除訂單產品明細
+        await deleteOrderProducts(input.id);
+        
+        // 刪除訂單
         await deleteOrder(input.id);
         return { success: true };
       }),
@@ -265,6 +373,9 @@ export const appRouter = router({
         name: z.string().min(1, "請輸入產品名稱"),
         color: z.string().optional(),
         price: z.number().nonnegative().optional(),
+        stockHK: z.number().nonnegative().optional(),
+        stockCN: z.number().nonnegative().optional(),
+        isGift: z.enum(["yes", "no"]).optional(),
       }))
       .mutation(async ({ input }) => {
         // 檢查 SKU 是否已存在
@@ -278,6 +389,9 @@ export const appRouter = router({
           name: input.name,
           color: input.color || null,
           price: input.price?.toString() || "0",
+          stockHK: input.stockHK || 0,
+          stockCN: input.stockCN || 0,
+          isGift: input.isGift || "no",
           isActive: "yes",
         });
 
@@ -291,6 +405,9 @@ export const appRouter = router({
         name: z.string().min(1).optional(),
         color: z.string().optional(),
         price: z.number().nonnegative().optional(),
+        stockHK: z.number().nonnegative().optional(),
+        stockCN: z.number().nonnegative().optional(),
+        isGift: z.enum(["yes", "no"]).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
@@ -307,6 +424,9 @@ export const appRouter = router({
         if (data.name) updateData.name = data.name;
         if (data.color !== undefined) updateData.color = data.color || null;
         if (data.price !== undefined) updateData.price = data.price.toString();
+        if (data.stockHK !== undefined) updateData.stockHK = data.stockHK;
+        if (data.stockCN !== undefined) updateData.stockCN = data.stockCN;
+        if (data.isGift !== undefined) updateData.isGift = data.isGift;
 
         await updateProduct(id, updateData as any);
         return { success: true };
@@ -380,6 +500,17 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
           analysis: response.choices[0]?.message?.content || "分析失敗",
           type: input.type,
         };
+      }),
+  }),
+
+  // 月份送貨報表
+  reports: router({
+    monthlyDelivery: protectedProcedure
+      .input(z.object({
+        year: z.number().min(2020).max(2100),
+      }))
+      .query(async ({ input }) => {
+        return getMonthlyDeliveryReport(input.year);
       }),
   }),
 });

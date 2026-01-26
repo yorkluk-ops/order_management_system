@@ -138,20 +138,31 @@ export async function seedPackages(pkgList: InsertPackage[]): Promise<void> {
 
 // ==================== Order Operations ====================
 
-function generateOrderNumber(): string {
-  const now = new Date();
-  const year = now.getFullYear().toString().slice(-2);
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
-  const day = now.getDate().toString().padStart(2, '0');
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `ORD${year}${month}${day}${random}`;
+async function generateOrderNumber(): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 獲取當前最大的訂單編號
+  const result = await db.select({ orderNumber: orders.orderNumber })
+    .from(orders)
+    .where(like(orders.orderNumber, '26EGB%'))
+    .orderBy(desc(orders.orderNumber))
+    .limit(1);
+  
+  let nextNumber = 1;
+  if (result.length > 0 && result[0].orderNumber) {
+    const lastNumber = result[0].orderNumber.replace('26EGB', '');
+    nextNumber = parseInt(lastNumber, 10) + 1;
+  }
+  
+  return `26EGB${nextNumber.toString().padStart(4, '0')}`;
 }
 
 export async function createOrder(order: Omit<InsertOrder, 'orderNumber'>): Promise<{ id: number; orderNumber: string }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const orderNumber = generateOrderNumber();
+  const orderNumber = await generateOrderNumber();
   const result = await db.insert(orders).values({
     ...order,
     orderNumber,
@@ -182,6 +193,8 @@ export interface OrderFilters {
   packageId?: number;
   dateFrom?: Date;
   dateTo?: Date;
+  deliveryDateFrom?: Date;
+  deliveryDateTo?: Date;
 }
 
 export async function getOrders(filters?: OrderFilters, limit = 100, offset = 0): Promise<{ orders: Order[]; total: number }> {
@@ -214,6 +227,14 @@ export async function getOrders(filters?: OrderFilters, limit = 100, offset = 0)
   
   if (filters?.dateTo) {
     conditions.push(lte(orders.createdAt, filters.dateTo));
+  }
+  
+  if (filters?.deliveryDateFrom) {
+    conditions.push(gte(orders.deliveryDate, filters.deliveryDateFrom));
+  }
+  
+  if (filters?.deliveryDateTo) {
+    conditions.push(lte(orders.deliveryDate, filters.deliveryDateTo));
   }
   
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -451,4 +472,88 @@ export async function deleteOrderProducts(orderId: number): Promise<void> {
   if (!db) throw new Error("Database not available");
   
   await db.delete(orderProducts).where(eq(orderProducts.orderId, orderId));
+}
+
+// ==================== Stock Operations ====================
+
+export async function updateProductStock(productId: number, quantityChange: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 扣減香港庫存（允許負數）
+  await db.update(products)
+    .set({ stockHK: sql`stockHK + ${quantityChange}` })
+    .where(eq(products.id, productId));
+}
+
+export async function updateProductStockBySku(sku: string, quantityChange: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 扣減香港庫存（允許負數）
+  await db.update(products)
+    .set({ stockHK: sql`stockHK + ${quantityChange}` })
+    .where(eq(products.sku, sku));
+}
+
+// ==================== Monthly Delivery Report ====================
+
+export interface MonthlyDeliveryItem {
+  sku: string;
+  productName: string;
+  color: string | null;
+  months: { [key: number]: number }; // 1-12 月份對應的數量
+  total: number;
+}
+
+export async function getMonthlyDeliveryReport(year: number): Promise<MonthlyDeliveryItem[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // 獲取指定年份所有訂單的產品明細
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year + 1, 0, 1);
+  
+  const result = await db.select({
+    sku: orderProducts.sku,
+    productName: orderProducts.productName,
+    color: orderProducts.color,
+    quantity: orderProducts.quantity,
+    deliveryDate: orders.deliveryDate,
+  })
+    .from(orderProducts)
+    .innerJoin(orders, eq(orderProducts.orderId, orders.id))
+    .where(
+      and(
+        gte(orders.deliveryDate, startDate),
+        lte(orders.deliveryDate, endDate),
+        // 排除已取消的訂單
+        sql`${orders.status} != 'cancelled'`
+      )
+    );
+  
+  // 按 SKU 聚合數據
+  const aggregated: { [sku: string]: MonthlyDeliveryItem } = {};
+  
+  for (const row of result) {
+    if (!row.deliveryDate) continue;
+    
+    const month = new Date(row.deliveryDate).getMonth() + 1; // 1-12
+    
+    if (!aggregated[row.sku]) {
+      aggregated[row.sku] = {
+        sku: row.sku,
+        productName: row.productName,
+        color: row.color,
+        months: {},
+        total: 0,
+      };
+    }
+    
+    aggregated[row.sku].months[month] = (aggregated[row.sku].months[month] || 0) + row.quantity;
+    aggregated[row.sku].total += row.quantity;
+  }
+  
+  // 轉換為數組並排序
+  return Object.values(aggregated).sort((a, b) => b.total - a.total);
 }

@@ -1,7 +1,8 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,8 +28,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { trpc } from "@/lib/trpc";
-import { Search, Plus, ChevronLeft, ChevronRight, Trash2, Eye, Edit } from "lucide-react";
+import { Search, Plus, ChevronLeft, ChevronRight, Trash2, Eye, Edit, Filter, X, Calendar } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +56,15 @@ function formatDate(date: Date | string | null): string {
     month: "2-digit",
     day: "2-digit",
   });
+}
+
+function formatDateYYYYMMDD(date: Date | string | null): string {
+  if (!date) return "-";
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}${month}${day}`;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -76,14 +91,26 @@ export default function OrderList() {
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  
+  // 日期篩選
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [deliveryDateFrom, setDeliveryDateFrom] = useState("");
+  const [deliveryDateTo, setDeliveryDateTo] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  
   const pageSize = 20;
 
   const filters = useMemo(() => ({
     search: search || undefined,
     status: status !== "all" ? status : undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    deliveryDateFrom: deliveryDateFrom || undefined,
+    deliveryDateTo: deliveryDateTo || undefined,
     limit: pageSize,
     offset: page * pageSize,
-  }), [search, status, page]);
+  }), [search, status, dateFrom, dateTo, deliveryDateFrom, deliveryDateTo, page]);
 
   const { data, isLoading, refetch } = trpc.orders.list.useQuery(filters);
   const deleteMutation = trpc.orders.delete.useMutation({
@@ -105,6 +132,16 @@ export default function OrderList() {
     }
   };
 
+  const clearFilters = () => {
+    setDateFrom("");
+    setDateTo("");
+    setDeliveryDateFrom("");
+    setDeliveryDateTo("");
+    setPage(0);
+  };
+
+  const hasActiveFilters = dateFrom || dateTo || deliveryDateFrom || deliveryDateTo;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -123,38 +160,110 @@ export default function OrderList() {
         {/* Filters */}
         <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="搜尋客戶姓名、電話或訂單編號..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
+            <div className="flex flex-col gap-4">
+              {/* 主要搜尋列 */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="搜尋客戶姓名、電話或訂單編號..."
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setPage(0);
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+                <Select
+                  value={status}
+                  onValueChange={(value) => {
+                    setStatus(value);
                     setPage(0);
                   }}
-                  className="pl-10"
-                />
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="訂單狀態" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部狀態</SelectItem>
+                    <SelectItem value="pending">待處理</SelectItem>
+                    <SelectItem value="confirmed">已確認</SelectItem>
+                    <SelectItem value="delivering">配送中</SelectItem>
+                    <SelectItem value="completed">已完成</SelectItem>
+                    <SelectItem value="cancelled">已取消</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant={showFilters ? "secondary" : "outline"}
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="relative"
+                >
+                  <Filter className="mr-2 h-4 w-4" />
+                  日期篩選
+                  {hasActiveFilters && (
+                    <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full" />
+                  )}
+                </Button>
               </div>
-              <Select
-                value={status}
-                onValueChange={(value) => {
-                  setStatus(value);
-                  setPage(0);
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="訂單狀態" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部狀態</SelectItem>
-                  <SelectItem value="pending">待處理</SelectItem>
-                  <SelectItem value="confirmed">已確認</SelectItem>
-                  <SelectItem value="delivering">配送中</SelectItem>
-                  <SelectItem value="completed">已完成</SelectItem>
-                  <SelectItem value="cancelled">已取消</SelectItem>
-                </SelectContent>
-              </Select>
+
+              {/* 日期篩選區 */}
+              {showFilters && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">購買日期（從）</Label>
+                    <Input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => {
+                        setDateFrom(e.target.value);
+                        setPage(0);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">購買日期（至）</Label>
+                    <Input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => {
+                        setDateTo(e.target.value);
+                        setPage(0);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">送貨日期（從）</Label>
+                    <Input
+                      type="date"
+                      value={deliveryDateFrom}
+                      onChange={(e) => {
+                        setDeliveryDateFrom(e.target.value);
+                        setPage(0);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">送貨日期（至）</Label>
+                    <Input
+                      type="date"
+                      value={deliveryDateTo}
+                      onChange={(e) => {
+                        setDeliveryDateTo(e.target.value);
+                        setPage(0);
+                      }}
+                    />
+                  </div>
+                  {hasActiveFilters && (
+                    <div className="col-span-full flex justify-end">
+                      <Button variant="ghost" size="sm" onClick={clearFilters}>
+                        <X className="mr-2 h-4 w-4" />
+                        清除篩選
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -171,7 +280,8 @@ export default function OrderList() {
                     <TableHead className="hidden md:table-cell">聯絡電話</TableHead>
                     <TableHead className="hidden lg:table-cell">套餐</TableHead>
                     <TableHead className="text-right">金額</TableHead>
-                    <TableHead className="hidden md:table-cell">送貨日期</TableHead>
+                    <TableHead className="hidden sm:table-cell">購買日期</TableHead>
+                    <TableHead>送貨日期</TableHead>
                     <TableHead>狀態</TableHead>
                     <TableHead className="text-right w-[100px]">操作</TableHead>
                   </TableRow>
@@ -185,7 +295,8 @@ export default function OrderList() {
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
                         <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                       </TableRow>
@@ -208,8 +319,16 @@ export default function OrderList() {
                         <TableCell className="text-right font-medium">
                           {formatCurrency(Number(order.orderAmount))}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground">
-                          {formatDate(order.deliveryDate)}
+                        <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                          {formatDate(order.createdAt)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-mono text-sm">
+                              {formatDateYYYYMMDD(order.deliveryDate)}
+                            </span>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={order.status} />
@@ -246,7 +365,7 @@ export default function OrderList() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-32 text-center">
+                      <TableCell colSpan={9} className="h-32 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <p className="text-muted-foreground">沒有找到訂單</p>
                           <Button variant="outline" size="sm" onClick={() => setLocation("/orders/new")}>

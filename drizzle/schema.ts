@@ -89,6 +89,11 @@ export const products = mysqlTable("products", {
   name: varchar("name", { length: 255 }).notNull(),
   color: varchar("color", { length: 100 }),
   price: decimal("price", { precision: 10, scale: 2 }).default("0"),
+  // 庫存欄位
+  stockHK: int("stockHK").default(0).notNull(),
+  stockCN: int("stockCN").default(0).notNull(),
+  // 贈品標記
+  isGift: mysqlEnum("isGift", ["yes", "no"]).default("no").notNull(),
   isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -108,6 +113,8 @@ export const orderProducts = mysqlTable("orderProducts", {
   productName: varchar("productName", { length: 255 }).notNull(),
   color: varchar("color", { length: 100 }),
   quantity: int("quantity").default(1).notNull(),
+  // 標記是否為贈品
+  isGift: mysqlEnum("isGift", ["yes", "no"]).default("no").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
