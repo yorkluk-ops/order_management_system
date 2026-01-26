@@ -120,3 +120,22 @@ export const orderProducts = mysqlTable("orderProducts", {
 
 export type OrderProduct = typeof orderProducts.$inferSelect;
 export type InsertOrderProduct = typeof orderProducts.$inferInsert;
+
+/**
+ * 訂單套餐關聯表 - 儲存訂單中的套餐明細（支援多套餐）
+ */
+export const orderPackages = mysqlTable("orderPackages", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  packageId: int("packageId"),
+  packageCode: varchar("packageCode", { length: 32 }).notNull(),
+  packageName: varchar("packageName", { length: 255 }).notNull(),
+  packageVariant: varchar("packageVariant", { length: 255 }),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  commission: decimal("commission", { precision: 10, scale: 2 }).notNull(),
+  quantity: int("quantity").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OrderPackage = typeof orderPackages.$inferSelect;
+export type InsertOrderPackage = typeof orderPackages.$inferInsert;

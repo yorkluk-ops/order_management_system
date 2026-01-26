@@ -29,6 +29,13 @@
       "when": 1769407485793,
       "tag": "0003_milky_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1769409063600,
+      "tag": "0004_odd_rocket_racer",
+      "breakpoints": true
     }
   ]
 }

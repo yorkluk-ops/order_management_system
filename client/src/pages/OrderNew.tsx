@@ -12,17 +12,25 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Save, Package, User, Truck, DollarSign, X, ShoppingBag, Gift, Plus, Minus } from "lucide-react";
+import { ArrowLeft, Save, Package, User, Truck, DollarSign, X, ShoppingBag, Gift, Plus, Minus, Boxes } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { PACKAGE_DEFINITIONS } from "../../../shared/packages";
 
 interface SelectedProduct {
   productId: number;
   sku: string;
   name: string;
   color: string;
+  quantity: number;
+}
+
+interface SelectedPackage {
+  packageId: number;
+  code: string;
+  name: string;
+  price: number;
+  commission: number;
   quantity: number;
 }
 
@@ -33,12 +41,18 @@ export default function OrderNew() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
-  const [selectedPackage, setSelectedPackage] = useState("");
-  const [selectedVariant, setSelectedVariant] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // Multi-package selection
+  const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([]);
+  const [selectedPackageId, setSelectedPackageId] = useState<string>("");
+  
+  // Custom amount for "OTHER" package
+  const [customAmount, setCustomAmount] = useState<number>(0);
+  const [customCommission, setCustomCommission] = useState<number>(0);
   
   // Product selection - using dropdown
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
@@ -47,16 +61,10 @@ export default function OrderNew() {
   // Gift selection
   const [selectedGifts, setSelectedGifts] = useState<SelectedProduct[]>([]);
   const [selectedGiftId, setSelectedGiftId] = useState<string>("");
+
+  // Fetch packages from database
+  const { data: packages } = trpc.packages.list.useQuery();
   
-  // Custom amount for "OTHER" package
-  const [customAmount, setCustomAmount] = useState<number>(0);
-  const [customCommission, setCustomCommission] = useState<number>(0);
-
-  // Computed values
-  const [orderAmount, setOrderAmount] = useState(0);
-  const [commission, setCommission] = useState(0);
-  const [packageName, setPackageName] = useState("");
-
   // Fetch products
   const { data: products } = trpc.products.list.useQuery();
 
@@ -71,48 +79,31 @@ export default function OrderNew() {
     [products]
   );
 
-  // Get selected package details
-  const selectedPkg = PACKAGE_DEFINITIONS.find(p => p.code === selectedPackage);
-  const variants = selectedPkg?.variants || [];
-  const isOtherPackage = selectedPackage === "OTHER";
+  // Calculate totals from selected packages
+  const totalAmount = useMemo(() => {
+    const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price * pkg.quantity, 0);
+    return packagesTotal + customAmount;
+  }, [selectedPackages, customAmount]);
 
-  // Update price and commission when package changes
-  useEffect(() => {
-    if (selectedPkg) {
-      if (isOtherPackage) {
-        setOrderAmount(customAmount);
-        setCommission(customCommission);
-        setPackageName("其他｜單件產品購買");
-      } else {
-        setOrderAmount(selectedPkg.price);
-        setCommission(selectedPkg.commission);
-        
-        if (selectedVariant && selectedPkg.variants) {
-          const variant = selectedPkg.variants.find(v => v.code === selectedVariant);
-          if (variant) {
-            setPackageName(`${selectedPkg.name} - ${variant.name}`);
-          } else {
-            setPackageName(selectedPkg.name);
-          }
-        } else {
-          setPackageName(selectedPkg.name);
-        }
-      }
-    } else {
-      setOrderAmount(0);
-      setCommission(0);
-      setPackageName("");
-    }
-  }, [selectedPackage, selectedVariant, selectedPkg, isOtherPackage, customAmount, customCommission]);
+  const totalCommission = useMemo(() => {
+    const packagesCommission = selectedPackages.reduce((sum, pkg) => sum + pkg.commission * pkg.quantity, 0);
+    return packagesCommission + customCommission;
+  }, [selectedPackages, customCommission]);
 
-  // Reset variant when package changes
-  useEffect(() => {
-    setSelectedVariant("");
-    if (!isOtherPackage) {
-      setCustomAmount(0);
-      setCustomCommission(0);
+  // Generate package name string
+  const packageNameString = useMemo(() => {
+    if (selectedPackages.length === 0) {
+      if (customAmount > 0) return "其他｜單件產品購買";
+      return "";
     }
-  }, [selectedPackage, isOtherPackage]);
+    const names = selectedPackages.map(pkg => 
+      pkg.quantity > 1 ? `${pkg.name} x${pkg.quantity}` : pkg.name
+    );
+    if (customAmount > 0) {
+      names.push("其他");
+    }
+    return names.join(" + ");
+  }, [selectedPackages, customAmount]);
 
   const createMutation = trpc.orders.create.useMutation({
     onSuccess: (result) => {
@@ -127,8 +118,13 @@ export default function OrderNew() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!customerName || !customerPhone || !selectedPackage || !deliveryAddress) {
+    if (!customerName || !customerPhone || !deliveryAddress) {
       toast.error("請填寫所有必填欄位");
+      return;
+    }
+
+    if (selectedPackages.length === 0 && customAmount === 0) {
+      toast.error("請至少選擇一個套餐或輸入自訂金額");
       return;
     }
 
@@ -136,11 +132,11 @@ export default function OrderNew() {
       customerName,
       customerPhone,
       customerEmail: customerEmail || "",
-      packageCode: selectedPackage,
-      packageName,
-      packageVariant: selectedVariant || undefined,
-      orderAmount,
-      commission,
+      packageCode: selectedPackages.length > 0 ? selectedPackages[0].code : "OTHER",
+      packageName: packageNameString,
+      packageVariant: undefined,
+      orderAmount: totalAmount,
+      commission: totalCommission,
       deliveryAddress,
       deliveryDate: deliveryDate || undefined,
       deliveryTimeSlot: deliveryTimeSlot || undefined,
@@ -160,6 +156,56 @@ export default function OrderNew() {
         quantity: g.quantity,
       })),
     });
+  };
+
+  // Handle package selection from dropdown
+  const handlePackageSelect = (packageIdStr: string) => {
+    if (!packageIdStr || !packages) return;
+    
+    const packageId = parseInt(packageIdStr);
+    const pkg = packages.find(p => p.id === packageId);
+    if (!pkg) return;
+
+    const existing = selectedPackages.find(p => p.packageId === pkg.id);
+    if (existing) {
+      setSelectedPackages(prev =>
+        prev.map(p =>
+          p.packageId === pkg.id
+            ? { ...p, quantity: p.quantity + 1 }
+            : p
+        )
+      );
+      toast.success(`${pkg.name} 數量 +1`);
+    } else {
+      setSelectedPackages(prev => [
+        ...prev,
+        {
+          packageId: pkg.id,
+          code: pkg.code,
+          name: pkg.name,
+          price: Number(pkg.price),
+          commission: Number(pkg.commission),
+          quantity: 1,
+        },
+      ]);
+      toast.success(`已新增 ${pkg.name}`);
+    }
+    
+    // Reset dropdown
+    setSelectedPackageId("");
+  };
+
+  const handleRemovePackage = (packageId: number) => {
+    setSelectedPackages(prev => prev.filter(p => p.packageId !== packageId));
+  };
+
+  const handleUpdatePackageQuantity = (packageId: number, quantity: number) => {
+    if (quantity < 1) return;
+    setSelectedPackages(prev =>
+      prev.map(p =>
+        p.packageId === packageId ? { ...p, quantity } : p
+      )
+    );
   };
 
   // Handle product selection from dropdown
@@ -340,124 +386,142 @@ export default function OrderNew() {
             </CardContent>
           </Card>
 
-          {/* Package Selection */}
+          {/* Multi-Package Selection */}
           <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Package className="h-5 w-5 text-primary" />
+                  <Boxes className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">套餐選擇</CardTitle>
-                  <CardDescription>選擇客戶購買的套餐或單件產品</CardDescription>
+                  <CardDescription>可選擇多個套餐（套餐+套餐、套餐+單件）</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Package Dropdown Selector */}
               <div className="space-y-2">
-                <Label htmlFor="package">選擇套餐 *</Label>
-                <Select value={selectedPackage} onValueChange={setSelectedPackage}>
+                <Label>新增套餐</Label>
+                <Select value={selectedPackageId} onValueChange={handlePackageSelect}>
                   <SelectTrigger>
-                    <SelectValue placeholder="請選擇套餐" />
+                    <SelectValue placeholder="選擇要新增的套餐..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {PACKAGE_DEFINITIONS.map((pkg) => (
-                      <SelectItem key={pkg.code} value={pkg.code}>
-                        <div className="flex flex-col">
-                          <span>{pkg.name}</span>
-                          {pkg.code !== "OTHER" && (
-                            <span className="text-xs text-muted-foreground">
-                              ${pkg.price.toLocaleString()} | 佣金 ${pkg.commission}
-                            </span>
-                          )}
-                          {pkg.code === "OTHER" && (
-                            <span className="text-xs text-muted-foreground">
-                              自訂金額和佣金
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {variants.length > 0 && !isOtherPackage && (
-                <div className="space-y-2">
-                  <Label htmlFor="variant">選擇變體 *</Label>
-                  <Select value={selectedVariant} onValueChange={setSelectedVariant}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="請選擇套餐變體" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {variants.map((variant) => (
-                        <SelectItem key={variant.code} value={variant.code}>
+                    {packages && packages.length > 0 ? (
+                      packages.map((pkg) => (
+                        <SelectItem key={pkg.id} value={pkg.id.toString()}>
                           <div className="flex flex-col">
-                            <span>{variant.name}</span>
-                            {variant.description && (
-                              <span className="text-xs text-muted-foreground">{variant.description}</span>
-                            )}
+                            <span>{pkg.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ${Number(pkg.price).toLocaleString()} | 佣金 ${Number(pkg.commission)}
+                            </span>
                           </div>
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      ))
+                    ) : (
+                      <SelectItem value="no-packages" disabled>
+                        尚無套餐，請先新增
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {(!packages || packages.length === 0) && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="px-0"
+                    onClick={() => setLocation("/packages")}
+                  >
+                    前往新增套餐 →
+                  </Button>
+                )}
+              </div>
+
+              {/* Selected Packages List */}
+              {selectedPackages.length > 0 && (
+                <div className="space-y-2 border rounded-lg p-4">
+                  <Label className="text-sm font-medium">已選套餐</Label>
+                  {selectedPackages.map((pkg) => (
+                    <div
+                      key={pkg.packageId}
+                      className="flex items-center justify-between py-2 border-b last:border-0"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{pkg.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          ${pkg.price.toLocaleString()} | 佣金 ${pkg.commission}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdatePackageQuantity(pkg.packageId, pkg.quantity - 1)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">{pkg.quantity}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdatePackageQuantity(pkg.packageId, pkg.quantity + 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleRemovePackage(pkg.packageId)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {/* Custom amount for OTHER package */}
-              {isOtherPackage && (
-                <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 space-y-4">
-                  <p className="text-sm text-amber-800">
-                    選擇「其他」時，請手動輸入訂單金額和佣金
-                  </p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="customAmount">訂單金額 *</Label>
-                      <Input
-                        id="customAmount"
-                        type="number"
-                        min="0"
-                        placeholder="請輸入金額"
-                        value={customAmount || ""}
-                        onChange={(e) => setCustomAmount(Number(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="customCommission">佣金</Label>
-                      <Input
-                        id="customCommission"
-                        type="number"
-                        min="0"
-                        placeholder="請輸入佣金"
-                        value={customCommission || ""}
-                        onChange={(e) => setCustomCommission(Number(e.target.value) || 0)}
-                      />
-                    </div>
+              {/* Custom amount for single products */}
+              <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 space-y-4">
+                <p className="text-sm text-amber-800 font-medium">
+                  單件產品購買（選填）
+                </p>
+                <p className="text-xs text-amber-700">
+                  如客戶只購買單件產品而非套餐，請在此輸入金額
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="customAmount">訂單金額</Label>
+                    <Input
+                      id="customAmount"
+                      type="number"
+                      min="0"
+                      placeholder="請輸入金額"
+                      value={customAmount || ""}
+                      onChange={(e) => setCustomAmount(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customCommission">佣金</Label>
+                    <Input
+                      id="customCommission"
+                      type="number"
+                      min="0"
+                      placeholder="請輸入佣金"
+                      value={customCommission || ""}
+                      onChange={(e) => setCustomCommission(Number(e.target.value) || 0)}
+                    />
                   </div>
                 </div>
-              )}
-
-              {selectedPkg && !isOtherPackage && (
-                <div className="p-4 rounded-lg bg-muted/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">套餐說明</span>
-                    <span className="text-sm">{selectedPkg.description}</span>
-                  </div>
-                  {selectedPkg.savings && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">優惠</span>
-                      <span className="text-sm text-emerald-600">{selectedPkg.savings}</span>
-                    </div>
-                  )}
-                  {selectedPkg.freeGift && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">贈品</span>
-                      <span className="text-sm">{selectedPkg.freeGift}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
@@ -554,7 +618,7 @@ export default function OrderNew() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => handleRemoveProduct(product.productId)}
                         >
                           <X className="h-4 w-4" />
@@ -564,10 +628,10 @@ export default function OrderNew() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-muted-foreground border rounded-lg bg-muted/20">
-                  <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>尚未選擇產品</p>
-                  <p className="text-xs mt-1">從上方下拉選單選擇產品</p>
+                <div className="text-center py-6 border rounded-lg bg-muted/20">
+                  <ShoppingBag className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-muted-foreground">尚未選擇產品</p>
+                  <p className="text-xs text-muted-foreground">從上方下拉選單選擇產品</p>
                 </div>
               )}
             </CardContent>
@@ -577,12 +641,12 @@ export default function OrderNew() {
           <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Gift className="h-5 w-5 text-amber-500" />
+                <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <Gift className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">贈品選擇</CardTitle>
-                  <CardDescription>選擇要贈送給客戶的產品（選填）</CardDescription>
+                  <CardDescription>選擇要贈送給客戶的贈品（選填）</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -611,32 +675,32 @@ export default function OrderNew() {
                       ))
                     ) : (
                       <SelectItem value="no-gifts" disabled>
-                        {giftProducts.length > 0 ? "所有贈品已選擇" : "尚無贈品，請先在產品管理中標記"}
+                        {giftProducts.length > 0 ? "所有贈品已選擇" : "尚無贈品，請先在產品管理中標記贈品"}
                       </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
                 {giftProducts.length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    提示：在產品管理頁面將產品標記為「贈品」後，即可在此選擇
+                    提示：在產品管理頁面中，將產品標記為「贈品」後即可在此選擇
                   </p>
                 )}
               </div>
 
               {/* Selected Gifts List */}
               {selectedGifts.length > 0 ? (
-                <div className="space-y-2 border rounded-lg p-4 bg-amber-50/50">
+                <div className="space-y-2 border border-amber-200 rounded-lg p-4 bg-amber-50/50">
                   {selectedGifts.map((gift) => (
                     <div
                       key={gift.productId}
-                      className="flex items-center justify-between py-2 border-b last:border-0"
+                      className="flex items-center justify-between py-2 border-b border-amber-200 last:border-0"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <Gift className="h-4 w-4 text-amber-500" />
+                          <Gift className="h-3 w-3 text-amber-500" />
                           <p className="font-medium text-sm">{gift.name}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground ml-6">
+                        <p className="text-xs text-muted-foreground">
                           {gift.sku} {gift.color ? `| ${gift.color}` : ""}
                         </p>
                       </div>
@@ -664,7 +728,7 @@ export default function OrderNew() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => handleRemoveGift(gift.productId)}
                         >
                           <X className="h-4 w-4" />
@@ -674,10 +738,10 @@ export default function OrderNew() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-muted-foreground border rounded-lg bg-muted/20">
-                  <Gift className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>尚未選擇贈品</p>
-                  <p className="text-xs mt-1">從上方下拉選單選擇贈品</p>
+                <div className="text-center py-6 border border-dashed border-amber-300 rounded-lg bg-amber-50/30">
+                  <Gift className="h-8 w-8 mx-auto text-amber-400/50 mb-2" />
+                  <p className="text-sm text-muted-foreground">尚未選擇贈品</p>
+                  <p className="text-xs text-muted-foreground">從上方下拉選單選擇贈品</p>
                 </div>
               )}
             </CardContent>
@@ -705,7 +769,6 @@ export default function OrderNew() {
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   required
-                  rows={3}
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -722,12 +785,12 @@ export default function OrderNew() {
                   <Label htmlFor="deliveryTimeSlot">送貨時段</Label>
                   <Select value={deliveryTimeSlot} onValueChange={setDeliveryTimeSlot}>
                     <SelectTrigger>
-                      <SelectValue placeholder="選擇時段" />
+                      <SelectValue placeholder="選擇送貨時段" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="morning">上午 (9:00-12:00)</SelectItem>
+                      <SelectItem value="morning">上午 (09:00-12:00)</SelectItem>
                       <SelectItem value="afternoon">下午 (12:00-18:00)</SelectItem>
-                      <SelectItem value="evening">晚間 (18:00-21:00)</SelectItem>
+                      <SelectItem value="evening">晚上 (18:00-21:00)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -739,18 +802,17 @@ export default function OrderNew() {
                   placeholder="其他備註事項（選填）"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
                 />
               </div>
             </CardContent>
           </Card>
 
           {/* Order Summary */}
-          <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow border-primary/20">
+          <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-primary" />
+                <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">訂單摘要</CardTitle>
@@ -760,30 +822,35 @@ export default function OrderNew() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
+                {packageNameString && (
+                  <div className="flex items-center justify-between py-2 border-b">
+                    <span className="text-muted-foreground">套餐</span>
+                    <span className="font-medium">{packageNameString}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between py-2 border-b">
                   <span className="text-muted-foreground">訂單金額</span>
-                  <span className="text-2xl font-semibold">
-                    ${orderAmount.toLocaleString()}
+                  <span className="text-xl font-bold text-primary">
+                    ${totalAmount.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <span className="text-muted-foreground">佣金</span>
-                  <span className="text-lg font-medium text-emerald-600">
-                    ${commission.toLocaleString()}
+                  <span className="text-lg font-semibold text-emerald-600">
+                    ${totalCommission.toLocaleString()}
                   </span>
                 </div>
                 {selectedProducts.length > 0 && (
                   <div className="pt-2 border-t">
                     <span className="text-sm text-muted-foreground">
-                      已選擇 {selectedProducts.length} 項產品，共 {selectedProducts.reduce((sum, p) => sum + p.quantity, 0)} 件
+                      產品明細：{selectedProducts.map(p => `${p.name} x${p.quantity}`).join("、")}
                     </span>
                   </div>
                 )}
                 {selectedGifts.length > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-amber-600">
-                    <Gift className="h-4 w-4" />
-                    <span>
-                      已選擇 {selectedGifts.length} 項贈品，共 {selectedGifts.reduce((sum, g) => sum + g.quantity, 0)} 件
+                  <div className="pt-2 border-t">
+                    <span className="text-sm text-amber-600">
+                      贈品：{selectedGifts.map(g => `${g.name} x${g.quantity}`).join("、")}
                     </span>
                   </div>
                 )}

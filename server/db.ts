@@ -1,6 +1,6 @@
 import { eq, desc, and, like, or, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, packages, products, orderProducts, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, Order, Package, Product, OrderProduct } from "../drizzle/schema";
+import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, Order, Package, Product, OrderProduct, OrderPackage } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -92,12 +92,15 @@ export async function getUserByOpenId(openId: string) {
 
 // ==================== Package Operations ====================
 
-export async function getAllPackages(): Promise<Package[]> {
+export async function getAllPackages(includeInactive = false): Promise<Package[]> {
   const db = await getDb();
   if (!db) return [];
   
-  const result = await db.select().from(packages).where(eq(packages.isActive, "yes"));
-  return result;
+  if (includeInactive) {
+    return db.select().from(packages).orderBy(desc(packages.createdAt));
+  }
+  
+  return db.select().from(packages).where(eq(packages.isActive, "yes")).orderBy(desc(packages.createdAt));
 }
 
 export async function getPackageById(id: number): Promise<Package | undefined> {
@@ -108,12 +111,35 @@ export async function getPackageById(id: number): Promise<Package | undefined> {
   return result[0];
 }
 
+export async function getPackageByCode(code: string): Promise<Package | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(packages).where(eq(packages.code, code)).limit(1);
+  return result[0];
+}
+
 export async function createPackage(pkg: InsertPackage): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
   const result = await db.insert(packages).values(pkg);
   return Number(result[0].insertId);
+}
+
+export async function updatePackage(id: number, data: Partial<InsertPackage>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(packages).set(data).where(eq(packages.id, id));
+}
+
+export async function deletePackage(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 軟刪除
+  await db.update(packages).set({ isActive: "no" }).where(eq(packages.id, id));
 }
 
 export async function seedPackages(pkgList: InsertPackage[]): Promise<void> {
@@ -556,4 +582,37 @@ export async function getMonthlyDeliveryReport(year: number): Promise<MonthlyDel
   
   // 轉換為數組並排序
   return Object.values(aggregated).sort((a, b) => b.total - a.total);
+}
+
+
+// ==================== Order Package Operations ====================
+
+export async function addOrderPackages(orderId: number, items: Omit<InsertOrderPackage, 'orderId'>[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  if (items.length === 0) return;
+  
+  const values = items.map(item => ({
+    ...item,
+    orderId,
+  }));
+  
+  await db.insert(orderPackages).values(values);
+}
+
+export async function getOrderPackages(orderId: number): Promise<OrderPackage[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(orderPackages)
+    .where(eq(orderPackages.orderId, orderId));
+}
+
+export async function deleteOrderPackages(orderId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(orderPackages).where(eq(orderPackages.orderId, orderId));
 }

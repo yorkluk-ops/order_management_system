@@ -24,8 +24,17 @@ import {
   deleteOrderProducts,
   updateProductStockBySku,
   getMonthlyDeliveryReport,
+  getAllPackages,
+  getPackageById,
+  getPackageByCode,
+  createPackage,
+  updatePackage,
+  deletePackage,
+  addOrderPackages,
+  getOrderPackages,
+  deleteOrderPackages,
 } from "./db";
-import { PACKAGE_DEFINITIONS, ORDER_STATUS, getAllPackagesFlat } from "../shared/packages";
+import { ORDER_STATUS } from "../shared/packages";
 import { notifyOwner } from "./_core/notification";
 import { invokeLLM } from "./_core/llm";
 
@@ -48,14 +57,104 @@ export const appRouter = router({
     }),
   }),
 
-  // 套餐相關
+  // 套餐管理
   packages: router({
-    list: publicProcedure.query(() => {
-      return PACKAGE_DEFINITIONS;
+    list: protectedProcedure.query(async () => {
+      return getAllPackages();
     }),
-    listFlat: publicProcedure.query(() => {
-      return getAllPackagesFlat();
+
+    listAll: protectedProcedure.query(async () => {
+      return getAllPackages(true);
     }),
+
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getPackageById(input.id);
+      }),
+
+    getByCode: protectedProcedure
+      .input(z.object({ code: z.string() }))
+      .query(async ({ input }) => {
+        return getPackageByCode(input.code);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        code: z.string().min(1, "請輸入套餐代碼"),
+        name: z.string().min(1, "請輸入套餐名稱"),
+        description: z.string().optional(),
+        price: z.number().nonnegative(),
+        commission: z.number().nonnegative(),
+        originalValue: z.number().nonnegative().optional(),
+        savings: z.string().optional(),
+        freeGift: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // 檢查代碼是否已存在
+        const existing = await getPackageByCode(input.code);
+        if (existing) {
+          throw new Error("套餐代碼已存在");
+        }
+
+        const id = await createPackage({
+          code: input.code,
+          name: input.name,
+          description: input.description || null,
+          price: input.price.toString(),
+          commission: input.commission.toString(),
+          originalValue: input.originalValue?.toString() || null,
+          savings: input.savings || null,
+          freeGift: input.freeGift || null,
+          isActive: "yes",
+        });
+
+        return { id, code: input.code };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        code: z.string().min(1).optional(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        price: z.number().nonnegative().optional(),
+        commission: z.number().nonnegative().optional(),
+        originalValue: z.number().nonnegative().optional(),
+        savings: z.string().optional(),
+        freeGift: z.string().optional(),
+        isActive: z.enum(["yes", "no"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: Record<string, unknown> = {};
+
+        if (data.code) {
+          const existing = await getPackageByCode(data.code);
+          if (existing && existing.id !== id) {
+            throw new Error("套餐代碼已存在");
+          }
+          updateData.code = data.code;
+        }
+        if (data.name) updateData.name = data.name;
+        if (data.description !== undefined) updateData.description = data.description || null;
+        if (data.price !== undefined) updateData.price = data.price.toString();
+        if (data.commission !== undefined) updateData.commission = data.commission.toString();
+        if (data.originalValue !== undefined) updateData.originalValue = data.originalValue?.toString() || null;
+        if (data.savings !== undefined) updateData.savings = data.savings || null;
+        if (data.freeGift !== undefined) updateData.freeGift = data.freeGift || null;
+        if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+        await updatePackage(id, updateData as any);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deletePackage(input.id);
+        return { success: true };
+      }),
   }),
 
   // 訂單相關
