@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Edit, Trash2, User, Package, Truck, DollarSign, Calendar, Clock, FileText } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, User, Package, Truck, DollarSign, Calendar, Clock, FileText, ShoppingBag, Gift } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
@@ -339,6 +339,70 @@ export default function OrderDetail() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Products */}
+        {order.products && order.products.length > 0 && (
+          <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ShoppingBag className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">產品明細</CardTitle>
+                  <CardDescription>訂單包含的產品</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {order.products.map((product: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                    <div className="flex-1">
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-sm text-muted-foreground">{product.sku} | {product.color}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-medium">x{product.quantity}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Gifts */}
+        {order.gifts && order.gifts.length > 0 && (
+          <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow border-pink-200">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-pink-100 flex items-center justify-center">
+                  <Gift className="h-5 w-5 text-pink-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">贈品明細</CardTitle>
+                  <CardDescription>訂單包含的贈品</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {order.gifts.map((gift: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                    <div className="flex-1">
+                      <p className="font-medium">{gift.name}</p>
+                      <p className="text-sm text-muted-foreground">{gift.sku} | {gift.color}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-medium">x{gift.quantity}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notes */}
         {order.notes && (

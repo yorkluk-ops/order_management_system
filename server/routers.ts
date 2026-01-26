@@ -280,7 +280,37 @@ export const appRouter = router({
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
-        return getOrderById(input.id);
+        const order = await getOrderById(input.id);
+        if (!order) return null;
+        
+        // 獲取訂單產品明細
+        const orderProductsList = await getOrderProducts(input.id);
+        
+        // 獲取產品詳細資訊，優先使用 orderProducts 表格中的資料，如果沒有則從 products 表格獲取
+        const productsWithDetails = await Promise.all(
+          orderProductsList.map(async (op) => {
+            // 如果 orderProducts 表格中有資料則直接使用，否則從 products 表格獲取
+            const product = op.productId ? await getProductById(op.productId) : null;
+            return {
+              ...op,
+              // 優先使用 orderProducts 表格中儲存的資料
+              sku: op.sku || product?.sku || '',
+              name: op.productName || product?.name || '',
+              color: op.color || product?.color || '',
+              isGift: op.isGift === 'yes',
+            };
+          })
+        );
+        
+        // 分類產品和贈品
+        const products = productsWithDetails.filter(p => !p.isGift);
+        const gifts = productsWithDetails.filter(p => p.isGift);
+        
+        return {
+          ...order,
+          products,
+          gifts,
+        };
       }),
 
     update: protectedProcedure
@@ -432,18 +462,58 @@ export const appRouter = router({
         } : undefined;
 
         const orders = await getOrdersForExport(filters);
-        return orders.map(order => ({
+        
+        // 獲取每個訂單的產品明細
+        const ordersWithProducts = await Promise.all(
+          orders.map(async (order) => {
+            const orderProductsList = await getOrderProducts(order.id);
+            
+            // 獲取產品詳細資訊，優先使用 orderProducts 表格中的資料
+            const productsWithDetails = await Promise.all(
+              orderProductsList.map(async (op) => {
+                const product = op.productId ? await getProductById(op.productId) : null;
+                return {
+                  // 優先使用 orderProducts 表格中儲存的資料
+                  sku: op.sku || product?.sku || '',
+                  name: op.productName || product?.name || '',
+                  color: op.color || product?.color || '',
+                  quantity: op.quantity,
+                  isGift: op.isGift === 'yes',
+                };
+              })
+            );
+            
+            // 分類產品和贈品
+            const products = productsWithDetails.filter(p => !p.isGift);
+            const gifts = productsWithDetails.filter(p => p.isGift);
+            
+            // 格式化產品明細字串
+            const productDetails = products.map(p => `${p.sku} | ${p.name} (${p.color}) x${p.quantity}`).join('\n');
+            const giftDetails = gifts.map(g => `${g.sku} | ${g.name} (${g.color}) x${g.quantity}`).join('\n');
+            
+            return {
+              ...order,
+              productDetails,
+              giftDetails,
+            };
+          })
+        );
+        
+        return ordersWithProducts.map(order => ({
           訂單編號: order.orderNumber,
           客戶姓名: order.customerName,
           聯絡電話: order.customerPhone,
           電子郵件: order.customerEmail || "",
           套餐名稱: order.packageName,
           套餐變體: order.packageVariant || "",
+          產品明細: order.productDetails || "",
+          贈品明細: order.giftDetails || "",
           訂單金額: Number(order.orderAmount),
           佣金: Number(order.commission),
           送貨地址: order.deliveryAddress,
           送貨日期: order.deliveryDate ? formatDateYYYYMMDD(new Date(order.deliveryDate)) : "",
           送貨時段: order.deliveryTimeSlot || "",
+          快遞號: order.trackingNumber || "",
           訂單狀態: ORDER_STATUS[order.status as keyof typeof ORDER_STATUS]?.label || order.status,
           備註: order.notes || "",
           建立時間: new Date(order.createdAt).toLocaleString("zh-TW"),
