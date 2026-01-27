@@ -14,6 +14,8 @@ import AIAnalysis from "./pages/AIAnalysis";
 import ProductList from "./pages/ProductList";
 import MonthlyDelivery from "./pages/MonthlyDelivery";
 import PackageList from "./pages/PackageList";
+import CustomerList from "./pages/CustomerList";
+import CustomerDetail from "./pages/CustomerDetail";
 
 function Router() {
   return (
@@ -28,6 +30,8 @@ function Router() {
       <Route path="/packages" component={PackageList} />
       <Route path="/products" component={ProductList} />
       <Route path="/monthly-delivery" component={MonthlyDelivery} />
+      <Route path="/customers" component={CustomerList} />
+      <Route path="/customers/:id" component={CustomerDetail} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

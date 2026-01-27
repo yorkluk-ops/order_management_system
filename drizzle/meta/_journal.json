@@ -50,6 +50,13 @@
       "when": 1769416631865,
       "tag": "0006_free_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1769526509201,
+      "tag": "0007_nasty_vulture",
+      "breakpoints": true
     }
   ]
 }

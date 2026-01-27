@@ -19,7 +19,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Edit, Trash2, User, Package, Truck, DollarSign, Calendar, Clock, FileText, ShoppingBag, Gift } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, User, Package, Truck, DollarSign, Calendar, Clock, FileText, ShoppingBag, Gift, CreditCard, Download, Link as LinkIcon, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
@@ -52,6 +58,23 @@ function formatDateTime(date: Date | string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function PaymentStatusBadge({ status }: { status: string }) {
+  const statusConfig: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
+    unpaid: { label: "未付款", className: "bg-red-100 text-red-800", icon: <AlertCircle className="h-3 w-3" /> },
+    partial: { label: "部分付款", className: "bg-yellow-100 text-yellow-800", icon: <AlertCircle className="h-3 w-3" /> },
+    paid: { label: "已付款", className: "bg-green-100 text-green-800", icon: <CheckCircle className="h-3 w-3" /> },
+  };
+  
+  const config = statusConfig[status] || statusConfig.unpaid;
+  
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.className}`}>
+      {config.icon}
+      {config.label}
+    </span>
+  );
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -104,6 +127,43 @@ export default function OrderDetail() {
     },
   });
 
+  const generatePdfMutation = trpc.payments.generatePdf.useMutation({
+    onSuccess: (data) => {
+      // 將 Base64 轉換為 Blob 並下載
+      const byteCharacters = atob(data.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: data.contentType });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`${data.filename} 已下載`);
+    },
+    onError: (error) => {
+      toast.error("生成 PDF 失敗: " + error.message);
+    },
+  });
+
+  const createStripeLinkMutation = trpc.payments.createStripeLink.useMutation({
+    onSuccess: (data) => {
+      window.open(data.url, "_blank");
+      toast.success("已開啟付款頁面");
+    },
+    onError: (error) => {
+      toast.error("建立付款連結失敗: " + error.message);
+    },
+  });
+
   const deleteMutation = trpc.orders.delete.useMutation({
     onSuccess: () => {
       toast.success("訂單已刪除");
@@ -123,6 +183,14 @@ export default function OrderDetail() {
 
   const handleDelete = () => {
     deleteMutation.mutate({ id: orderId });
+  };
+
+  const handleDownloadPdf = (type: "quotation" | "invoice" | "receipt") => {
+    generatePdfMutation.mutate({ orderId, type });
+  };
+
+  const handleCreatePaymentLink = () => {
+    createStripeLinkMutation.mutate({ orderId });
   };
 
   if (isLoading) {
@@ -180,7 +248,49 @@ export default function OrderDetail() {
               </div>
               <p className="page-description">建立於 {formatDateTime(order.createdAt)}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* PDF 下載選單 */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" disabled={generatePdfMutation.isPending}>
+                    {generatePdfMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4" />
+                    )}
+                    下載 PDF
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleDownloadPdf("quotation")}>
+                    報價單
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownloadPdf("invoice")}>
+                    發票
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownloadPdf("receipt")}>
+                    收據
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Stripe 付款連結 */}
+              {order.paymentStatus !== "paid" && (
+                <Button
+                  variant="outline"
+                  onClick={handleCreatePaymentLink}
+                  disabled={createStripeLinkMutation.isPending}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  {createStripeLinkMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="mr-2 h-4 w-4" />
+                  )}
+                  付款連結
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
                 onClick={() => setLocation(`/orders/${order.id}/edit`)}
@@ -318,19 +428,32 @@ export default function OrderDetail() {
           {/* Order Summary */}
           <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow border-primary/20">
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">訂單金額</CardTitle>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg">訂單金額</CardTitle>
-                </div>
+                <PaymentStatusBadge status={order.paymentStatus || "unpaid"} />
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center py-2 border-b border-border/50">
                 <span className="text-sm text-muted-foreground">訂單金額</span>
                 <span className="text-2xl font-semibold">{formatCurrency(Number(order.orderAmount))}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">已付金額</span>
+                <span className="text-lg font-medium text-green-600">{formatCurrency(Number(order.paidAmount || 0))}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">應付餘額</span>
+                <span className={`text-lg font-medium ${Number(order.orderAmount) - Number(order.paidAmount || 0) > 0 ? "text-red-600" : "text-green-600"}`}>
+                  {formatCurrency(Number(order.orderAmount) - Number(order.paidAmount || 0))}
+                </span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-sm text-muted-foreground">佣金</span>

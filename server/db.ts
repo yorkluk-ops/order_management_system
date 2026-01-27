@@ -1,6 +1,6 @@
 import { eq, desc, and, like, or, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, Order, Package, Product, OrderProduct, OrderPackage } from "../drizzle/schema";
+import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, customers, payments, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, InsertCustomer, InsertPayment, Order, Package, Product, OrderProduct, OrderPackage, Customer, Payment } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -615,4 +615,154 @@ export async function deleteOrderPackages(orderId: number): Promise<void> {
   if (!db) throw new Error("Database not available");
   
   await db.delete(orderPackages).where(eq(orderPackages.orderId, orderId));
+}
+
+
+// ==================== Customer Operations ====================
+
+export async function createCustomer(customer: InsertCustomer): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(customers).values(customer);
+  return result[0].insertId;
+}
+
+export async function updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(customers).set(customer).where(eq(customers.id, id));
+}
+
+export async function deleteCustomer(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(customers).where(eq(customers.id, id));
+}
+
+export async function getCustomerById(id: number): Promise<Customer | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(customers).where(eq(customers.id, id));
+  return result[0] || null;
+}
+
+export async function getCustomerByPhone(phone: string): Promise<Customer | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(customers).where(eq(customers.phone, phone));
+  return result[0] || null;
+}
+
+export async function getCustomers(search?: string, limit = 50, offset = 0): Promise<Customer[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(customers);
+  
+  if (search) {
+    query = query.where(
+      or(
+        like(customers.name, `%${search}%`),
+        like(customers.phone, `%${search}%`),
+        like(customers.email, `%${search}%`)
+      )
+    ) as typeof query;
+  }
+  
+  return query.orderBy(desc(customers.updatedAt)).limit(limit).offset(offset);
+}
+
+export async function updateCustomerStats(customerId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 計算客戶的訂單數和總消費
+  const stats = await db.select({
+    totalOrders: sql<number>`COUNT(*)`,
+    totalSpent: sql<string>`COALESCE(SUM(${orders.orderAmount}), 0)`,
+  })
+    .from(orders)
+    .where(eq(orders.customerId, customerId));
+  
+  if (stats[0]) {
+    await db.update(customers).set({
+      totalOrders: stats[0].totalOrders,
+      totalSpent: stats[0].totalSpent,
+    }).where(eq(customers.id, customerId));
+  }
+}
+
+// ==================== Payment Operations ====================
+
+export async function createPayment(payment: InsertPayment): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(payments).values(payment);
+  return result[0].insertId;
+}
+
+export async function updatePayment(id: number, payment: Partial<InsertPayment>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(payments).set(payment).where(eq(payments.id, id));
+}
+
+export async function getPaymentsByOrderId(orderId: number): Promise<Payment[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(payments).where(eq(payments.orderId, orderId)).orderBy(desc(payments.createdAt));
+}
+
+export async function getPaymentByStripeIntentId(stripePaymentIntentId: string): Promise<Payment | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(payments).where(eq(payments.stripePaymentIntentId, stripePaymentIntentId));
+  return result[0] || null;
+}
+
+export async function updateOrderPaymentStatus(orderId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 計算已付金額
+  const paymentStats = await db.select({
+    totalPaid: sql<string>`COALESCE(SUM(CASE WHEN ${payments.status} = 'completed' THEN ${payments.amount} ELSE 0 END), 0)`,
+  })
+    .from(payments)
+    .where(eq(payments.orderId, orderId));
+  
+  const paidAmount = parseFloat(paymentStats[0]?.totalPaid || '0');
+  
+  // 獲取訂單金額
+  const order = await db.select({ orderAmount: orders.orderAmount }).from(orders).where(eq(orders.id, orderId));
+  const orderAmount = parseFloat(order[0]?.orderAmount || '0');
+  
+  // 更新付款狀態
+  let paymentStatus: 'unpaid' | 'partial' | 'paid' = 'unpaid';
+  if (paidAmount >= orderAmount) {
+    paymentStatus = 'paid';
+  } else if (paidAmount > 0) {
+    paymentStatus = 'partial';
+  }
+  
+  await db.update(orders).set({
+    paymentStatus,
+    paidAmount: paidAmount.toString(),
+  }).where(eq(orders.id, orderId));
+}
+
+export async function getOrdersByCustomerId(customerId: number): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(orders).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt));
 }

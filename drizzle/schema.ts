@@ -71,6 +71,13 @@ export const orders = mysqlTable("orders", {
   // 訂單狀態
   status: mysqlEnum("status", ["pending", "confirmed", "delivering", "completed", "cancelled"]).default("pending").notNull(),
   
+  // 付款狀態
+  paymentStatus: mysqlEnum("paymentStatus", ["unpaid", "partial", "paid"]).default("unpaid").notNull(),
+  paidAmount: decimal("paidAmount", { precision: 10, scale: 2 }).default("0").notNull(),
+  
+  // 關聯顧客
+  customerId: int("customerId"),
+  
   // 備註
   notes: text("notes"),
   
@@ -142,3 +149,49 @@ export const orderPackages = mysqlTable("orderPackages", {
 
 export type OrderPackage = typeof orderPackages.$inferSelect;
 export type InsertOrderPackage = typeof orderPackages.$inferInsert;
+
+/**
+ * 顧客資料表 - 儲存顧客資訊
+ */
+export const customers = mysqlTable("customers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  address: text("address"),
+  notes: text("notes"),
+  // 統計資料
+  totalOrders: int("totalOrders").default(0).notNull(),
+  totalSpent: decimal("totalSpent", { precision: 12, scale: 2 }).default("0").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = typeof customers.$inferInsert;
+
+/**
+ * 付款記錄表 - 儲存訂單付款記錄
+ */
+export const payments = mysqlTable("payments", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  // 付款方式
+  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "cash", "bank_transfer", "other"]).notNull(),
+  // 付款金額
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  // Stripe 相關
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  stripePaymentLinkId: varchar("stripePaymentLinkId", { length: 255 }),
+  // 付款狀態
+  status: mysqlEnum("status", ["pending", "completed", "failed", "refunded"]).default("pending").notNull(),
+  // 備註
+  notes: text("notes"),
+  // 時間戳
+  paidAt: timestamp("paidAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;

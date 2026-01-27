@@ -34,10 +34,26 @@ import {
   addOrderPackages,
   getOrderPackages,
   deleteOrderPackages,
+  // 顧客管理
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+  getCustomerById,
+  getCustomerByPhone,
+  getCustomers,
+  updateCustomerStats,
+  getOrdersByCustomerId,
+  // 付款管理
+  createPayment,
+  updatePayment,
+  getPaymentsByOrderId,
+  getPaymentByStripeIntentId,
+  updateOrderPaymentStatus,
 } from "./db";
 import { ORDER_STATUS } from "../shared/packages";
 import { notifyOwner } from "./_core/notification";
 import { invokeLLM } from "./_core/llm";
+import { generateQuotationPdf, generateInvoicePdf, generateReceiptPdf, type OrderForPdf } from "./pdfService";
 
 // 日期格式化函數 YYYYMMDD
 function formatDateYYYYMMDD(date: Date): string {
@@ -696,6 +712,271 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
       }))
       .query(async ({ input }) => {
         return getMonthlyDeliveryReport(input.year);
+      }),
+  }),
+
+  // 顧客管理
+  customers: router({
+    list: protectedProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        limit: z.number().default(50),
+        offset: z.number().default(0),
+      }).optional())
+      .query(async ({ input }) => {
+        return getCustomers(input?.search, input?.limit || 50, input?.offset || 0);
+      }),
+
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const customer = await getCustomerById(input.id);
+        if (!customer) return null;
+        
+        // 獲取顧客的訂單歷史
+        const orders = await getOrdersByCustomerId(input.id);
+        
+        return {
+          ...customer,
+          orders,
+        };
+      }),
+
+    getByPhone: protectedProcedure
+      .input(z.object({ phone: z.string() }))
+      .query(async ({ input }) => {
+        return getCustomerByPhone(input.phone);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        phone: z.string().min(1),
+        email: z.string().email().optional().or(z.literal("")),
+        address: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // 檢查電話是否已存在
+        const existing = await getCustomerByPhone(input.phone);
+        if (existing) {
+          throw new Error("該電話號碼已存在顧客記錄");
+        }
+        
+        const customerId = await createCustomer({
+          name: input.name,
+          phone: input.phone,
+          email: input.email || null,
+          address: input.address || null,
+          notes: input.notes || null,
+        });
+        
+        return { id: customerId };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        phone: z.string().min(1).optional(),
+        email: z.string().email().optional().or(z.literal("")),
+        address: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: Record<string, unknown> = {};
+        
+        if (data.phone) {
+          // 檢查新電話是否與其他顧客衝突
+          const existing = await getCustomerByPhone(data.phone);
+          if (existing && existing.id !== id) {
+            throw new Error("該電話號碼已存在其他顧客記錄");
+          }
+          updateData.phone = data.phone;
+        }
+        
+        if (data.name) updateData.name = data.name;
+        if (data.email !== undefined) updateData.email = data.email || null;
+        if (data.address !== undefined) updateData.address = data.address || null;
+        if (data.notes !== undefined) updateData.notes = data.notes || null;
+        
+        await updateCustomer(id, updateData as any);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteCustomer(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // 付款管理
+  payments: router({
+    listByOrder: protectedProcedure
+      .input(z.object({ orderId: z.number() }))
+      .query(async ({ input }) => {
+        return getPaymentsByOrderId(input.orderId);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        paymentMethod: z.enum(["stripe", "cash", "bank_transfer", "other"]),
+        amount: z.number().positive(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const paymentId = await createPayment({
+          orderId: input.orderId,
+          paymentMethod: input.paymentMethod,
+          amount: input.amount.toString(),
+          status: "completed",
+          paidAt: new Date(),
+          notes: input.notes || null,
+        });
+        
+        // 更新訂單付款狀態
+        await updateOrderPaymentStatus(input.orderId);
+        
+        // 如果訂單有關聯顧客，更新顧客統計
+        const order = await getOrderById(input.orderId);
+        if (order?.customerId) {
+          await updateCustomerStats(order.customerId);
+        }
+        
+        return { id: paymentId };
+      }),
+
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "completed", "failed", "refunded"]),
+      }))
+      .mutation(async ({ input }) => {
+        await updatePayment(input.id, {
+          status: input.status,
+          paidAt: input.status === "completed" ? new Date() : undefined,
+        });
+        
+        // 獲取付款記錄以更新訂單狀態
+        const payments = await getPaymentsByOrderId(input.id);
+        if (payments.length > 0) {
+          await updateOrderPaymentStatus(payments[0].orderId);
+        }
+        
+        return { success: true };
+      }),
+
+    // 生成 PDF 文件
+    generatePdf: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        type: z.enum(["quotation", "invoice", "receipt"]),
+      }))
+      .mutation(async ({ input }) => {
+        const order = await getOrderById(input.orderId);
+        if (!order) {
+          throw new Error("訂單不存在");
+        }
+        
+        // 獲取訂單產品明細
+        const orderProductsList = await getOrderProducts(input.orderId);
+        
+        // 獲取產品詳細資訊
+        const productsWithDetails = await Promise.all(
+          orderProductsList.map(async (op) => {
+            const product = op.productId ? await getProductById(op.productId) : null;
+            return {
+              sku: op.sku || product?.sku || "",
+              name: op.productName || product?.name || "",
+              color: op.color || product?.color || "",
+              quantity: op.quantity,
+              isGift: op.isGift === "yes",
+            };
+          })
+        );
+        
+        const products = productsWithDetails.filter(p => !p.isGift);
+        const gifts = productsWithDetails.filter(p => p.isGift);
+        
+        const orderForPdf: OrderForPdf = {
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          customerEmail: order.customerEmail,
+          deliveryAddress: order.deliveryAddress,
+          deliveryDate: order.deliveryDate,
+          deliveryTimeSlot: order.deliveryTimeSlot,
+          orderAmount: order.orderAmount,
+          paidAmount: order.paidAmount,
+          paymentStatus: order.paymentStatus,
+          packageName: order.packageName,
+          packageVariant: order.packageVariant,
+          products,
+          gifts,
+          createdAt: order.createdAt,
+          notes: order.notes,
+        };
+        
+        let pdfBuffer: Buffer;
+        let filename: string;
+        
+        switch (input.type) {
+          case "quotation":
+            pdfBuffer = await generateQuotationPdf(orderForPdf);
+            filename = `報價單_${order.orderNumber}.pdf`;
+            break;
+          case "invoice":
+            pdfBuffer = await generateInvoicePdf(orderForPdf);
+            filename = `發票_${order.orderNumber}.pdf`;
+            break;
+          case "receipt":
+            pdfBuffer = await generateReceiptPdf(orderForPdf);
+            filename = `收據_${order.orderNumber}.pdf`;
+            break;
+        }
+        
+        // 返回 Base64 編碼的 PDF
+        return {
+          data: pdfBuffer.toString("base64"),
+          filename,
+          contentType: "application/pdf",
+        };
+      }),
+
+    // 建立 Stripe 付款連結
+    createStripeLink: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const order = await getOrderById(input.orderId);
+        if (!order) {
+          throw new Error("訂單不存在");
+        }
+        
+        // 建立 Stripe Checkout Session
+        const { createPaymentLink } = await import("./stripe");
+        const origin = ctx.req.headers.origin || "http://localhost:3000";
+        
+        const result = await createPaymentLink({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          amount: Number(order.orderAmount),
+          customerName: order.customerName,
+          customerEmail: order.customerEmail || undefined,
+          description: `訂單 ${order.orderNumber} - ${order.packageName}`,
+          successUrl: `${origin}/orders/${order.id}?payment=success`,
+          cancelUrl: `${origin}/orders/${order.id}?payment=cancelled`,
+        });
+        
+        return {
+          url: result.url,
+          sessionId: result.sessionId,
+        };
       }),
   }),
 });
