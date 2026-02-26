@@ -40,6 +40,8 @@ export default function OrderEdit() {
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [notes, setNotes] = useState("");
+  const [shopName, setShopName] = useState("ReadyGo HK");
+  const [customShopName, setCustomShopName] = useState("");
   const [orderAmount, setOrderAmount] = useState(0);
   const [commission, setCommission] = useState(0);
   
@@ -81,6 +83,14 @@ export default function OrderEdit() {
       setDeliveryTimeSlot(order.deliveryTimeSlot || "");
       setTrackingNumber(order.trackingNumber || "");
       setNotes(order.notes || "");
+      const sn = (order as any).shopName || "ReadyGo HK";
+      const presetShops = ["ReadyGo HK", "Poled HK", "Upang HK", "Shnuggle HK", "Baby Brezza HK", "Ultron Digital"];
+      if (presetShops.includes(sn)) {
+        setShopName(sn);
+      } else {
+        setShopName("custom");
+        setCustomShopName(sn);
+      }
       setOrderAmount(Number(order.orderAmount));
       setCommission(Number(order.commission));
     }
@@ -200,6 +210,7 @@ export default function OrderEdit() {
       customerName,
       customerPhone,
       customerEmail: customerEmail || "",
+      shopName: shopName === "custom" ? customShopName : shopName,
       deliveryAddress,
       deliveryDate: deliveryDate || undefined,
       deliveryTimeSlot: deliveryTimeSlot || undefined,
@@ -319,6 +330,31 @@ export default function OrderEdit() {
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>商鋪名稱</Label>
+                <Select value={shopName} onValueChange={(v) => setShopName(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="選擇商鋪" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ReadyGo HK">ReadyGo HK</SelectItem>
+                    <SelectItem value="Poled HK">Poled HK</SelectItem>
+                    <SelectItem value="Upang HK">Upang HK</SelectItem>
+                    <SelectItem value="Shnuggle HK">Shnuggle HK</SelectItem>
+                    <SelectItem value="Baby Brezza HK">Baby Brezza HK</SelectItem>
+                    <SelectItem value="Ultron Digital">Ultron Digital</SelectItem>
+                    <SelectItem value="custom">自訂商鋪名稱...</SelectItem>
+                  </SelectContent>
+                </Select>
+                {shopName === "custom" && (
+                  <Input
+                    placeholder="請輸入商鋪名稱"
+                    value={customShopName}
+                    onChange={(e) => setCustomShopName(e.target.value)}
+                    className="mt-2"
+                  />
+                )}
               </div>
             </CardContent>
           </Card>

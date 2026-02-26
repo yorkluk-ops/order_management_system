@@ -11,6 +11,7 @@ export interface OrderForPdf {
   orderAmount: string;
   paidAmount: string;
   paymentStatus: string;
+  shopName: string;
   packageName: string;
   packageVariant: string | null;
   products: Array<{
@@ -73,7 +74,7 @@ function buildHtml(order: OrderForPdf, docType: string, docTitle: string): strin
   const giftRows = order.gifts.map((g) => `
     <tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #eee;">
-        <div style="font-weight: 500; color: #e91e8c;">🎁 ${escapeHtml(g.name)}</div>
+        <div style="font-weight: 500; color: #334155;">🎁 ${escapeHtml(g.name)}</div>
         <div style="font-size: 12px; color: #888;">SKU: ${escapeHtml(g.sku)}${g.color ? ` | ${escapeHtml(g.color)}` : ""}</div>
       </td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: center;">${g.quantity}</td>
@@ -335,8 +336,8 @@ function buildHtml(order: OrderForPdf, docType: string, docTitle: string): strin
     .status-unpaid { background: #fee2e2; color: #991b1b; }
     
     .gift-section { margin-top: 5px; }
-    .gift-section .section-title { color: #e91e8c; border-bottom-color: #fbcfe8; }
-    .gift-section thead { background: #ec4899; }
+    .gift-section .section-title { color: #334155; border-bottom-color: #cbd5e1; }
+    .gift-section thead { background: #475569; }
   </style>
 </head>
 <body>
@@ -368,7 +369,7 @@ function buildHtml(order: OrderForPdf, docType: string, docTitle: string): strin
     <div class="meta-grid">
       <div class="meta-item">
         <div class="meta-label">商鋪</div>
-        <div class="meta-value">ReadyGo HK</div>
+        <div class="meta-value">${escapeHtml(order.shopName || 'ReadyGo HK')}</div>
       </div>
       <div class="meta-item">
         <div class="meta-label">套餐</div>

@@ -189,6 +189,7 @@ export const appRouter = router({
         packageCode: z.string().min(1, "請選擇套餐"),
         packageName: z.string().min(1),
         packageVariant: z.string().optional(),
+        shopName: z.string().optional(),
         orderAmount: z.number().nonnegative(),
         commission: z.number().nonnegative(),
         deliveryAddress: z.string().min(1, "請輸入送貨地址"),
@@ -221,6 +222,7 @@ export const appRouter = router({
           packageId: 1,
           packageName: input.packageName,
           packageVariant: input.packageVariant || null,
+          shopName: input.shopName || "ReadyGo HK",
           orderAmount: input.orderAmount.toString(),
           commission: input.commission.toString(),
           deliveryAddress: input.deliveryAddress,
@@ -338,6 +340,7 @@ export const appRouter = router({
         customerEmail: z.string().email().optional().or(z.literal("")),
         packageName: z.string().optional(),
         packageVariant: z.string().optional(),
+        shopName: z.string().optional(),
         orderAmount: z.number().nonnegative().optional(),
         commission: z.number().nonnegative().optional(),
         deliveryAddress: z.string().optional(),
@@ -369,6 +372,7 @@ export const appRouter = router({
         if (data.customerEmail !== undefined) updateData.customerEmail = data.customerEmail || null;
         if (data.packageName) updateData.packageName = data.packageName;
         if (data.packageVariant !== undefined) updateData.packageVariant = data.packageVariant || null;
+        if (data.shopName !== undefined) updateData.shopName = data.shopName;
         if (data.orderAmount !== undefined) updateData.orderAmount = data.orderAmount.toString();
         if (data.commission !== undefined) updateData.commission = data.commission.toString();
         if (data.deliveryAddress) updateData.deliveryAddress = data.deliveryAddress;
@@ -518,6 +522,7 @@ export const appRouter = router({
         
         return ordersWithProducts.map(order => ({
           訂單編號: order.orderNumber,
+          商鋪: (order as any).shopName || "ReadyGo HK",
           客戶姓名: order.customerName,
           聯絡電話: order.customerPhone,
           電子郵件: order.customerEmail || "",
@@ -940,6 +945,7 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
           orderAmount: order.orderAmount,
           paidAmount: order.paidAmount,
           paymentStatus: order.paymentStatus,
+          shopName: order.shopName || "ReadyGo HK",
           packageName: order.packageName,
           packageVariant: order.packageVariant,
           products,

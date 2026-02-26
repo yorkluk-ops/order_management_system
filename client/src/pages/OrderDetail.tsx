@@ -494,6 +494,10 @@ export default function OrderDetail() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground block mb-1">商鋪</span>
+                <span className="font-medium">{(order as any).shopName || "ReadyGo HK"}</span>
+              </div>
+              <div className="py-2 border-b border-border/50">
                 <span className="text-sm text-muted-foreground block mb-1">套餐名稱</span>
                 <span className="font-medium">{order.packageName}</span>
               </div>

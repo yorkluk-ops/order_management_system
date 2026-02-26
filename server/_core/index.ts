@@ -86,6 +86,7 @@ async function startServer() {
         orderAmount: order.orderAmount,
         paidAmount: order.paidAmount,
         paymentStatus: order.paymentStatus,
+        shopName: order.shopName || "ReadyGo HK",
         packageName: order.packageName,
         packageVariant: order.packageVariant,
         products,

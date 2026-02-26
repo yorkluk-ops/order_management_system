@@ -51,6 +51,7 @@ export default function Export() {
       // Set column widths
       const colWidths = [
         { wch: 15 }, // 訂單編號
+        { wch: 15 }, // 商鋪
         { wch: 12 }, // 客戶姓名
         { wch: 15 }, // 聯絡電話
         { wch: 25 }, // 電子郵件

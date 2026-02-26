@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD `shopName` varchar(255) DEFAULT 'ReadyGo HK' NOT NULL;

@@ -53,6 +53,9 @@ export const orders = mysqlTable("orders", {
   customerPhone: varchar("customerPhone", { length: 50 }).notNull(),
   customerEmail: varchar("customerEmail", { length: 320 }),
   
+  // 商鋪名稱
+  shopName: varchar("shopName", { length: 255 }).default("ReadyGo HK").notNull(),
+  
   // 套餐資料
   packageId: int("packageId").notNull(),
   packageName: varchar("packageName", { length: 255 }).notNull(),
