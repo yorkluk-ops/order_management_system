@@ -118,11 +118,32 @@ function buildHtml(order: OrderForPdf, docType: string, docTitle: string): strin
       border-bottom: 3px solid #2563eb;
     }
     
-    .company-info { flex: 1; }
+    .company-info { flex: 1; display: flex; align-items: flex-start; gap: 14px; }
+    
+    .company-logo {
+      width: 60px;
+      height: 60px;
+      flex-shrink: 0;
+    }
+    
+    .company-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    .company-text { flex: 1; }
     
     .company-name {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
+      color: #1e40af;
+      margin-bottom: 2px;
+    }
+    
+    .company-name-en {
+      font-size: 13px;
+      font-weight: 500;
       color: #1e40af;
       margin-bottom: 4px;
     }
@@ -322,11 +343,16 @@ function buildHtml(order: OrderForPdf, docType: string, docTitle: string): strin
   <div class="page">
     <div class="header">
       <div class="company-info">
-        <div class="company-name">奧創數碼有限公司</div>
-        <div class="company-detail">
-          Ultron Digital Limited<br>
-          電話：+852 4485 9954<br>
-          網站：https://ultrondigital.com.hk/
+        <div class="company-logo">
+          <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663035885409/jbMQqpbKgBQzaPKM.png" alt="Logo" />
+        </div>
+        <div class="company-text">
+          <div class="company-name">奧創數碼有限公司</div>
+          <div class="company-name-en">Ultron Digital Company Limited</div>
+          <div class="company-detail">
+            電話：+852 4485 9954<br>
+            網站：https://ultrondigital.com.hk/
+          </div>
         </div>
       </div>
       <div class="doc-title-box">

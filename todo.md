@@ -166,3 +166,8 @@
 - [x] 確認 Stripe Checkout 付款流程正常運作
 - [x] 付款成功後自動更新訂單狀態
 - [x] 付款記錄顯示在訂單詳情頁面
+
+## PDF Logo 和公司名稱更新
+- [x] 上傳公司 Logo 到 S3
+- [x] PDF 左上角加入公司 Logo
+- [x] 更新公司名稱為「奧創數碼有限公司 Ultron Digital Company Limited」
