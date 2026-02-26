@@ -35,8 +35,8 @@ import {
 } from "@/components/ui/popover";
 import { trpc } from "@/lib/trpc";
 import { Search, Plus, ChevronLeft, ChevronRight, Trash2, Eye, Edit, Filter, X, Calendar } from "lucide-react";
-import { useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -87,17 +87,39 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function OrderList() {
   const [, setLocation] = useLocation();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("all");
-  const [page, setPage] = useState(0);
+  const searchString = useSearch();
+  
+  // 從 URL 參數恢復篩選狀態
+  const urlParams = useMemo(() => new URLSearchParams(searchString), [searchString]);
+  
+  const [search, setSearch] = useState(urlParams.get("q") || "");
+  const [status, setStatus] = useState<string>(urlParams.get("status") || "all");
+  const [page, setPage] = useState(Number(urlParams.get("page")) || 0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   
   // 日期篩選
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [deliveryDateFrom, setDeliveryDateFrom] = useState("");
-  const [deliveryDateTo, setDeliveryDateTo] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [dateFrom, setDateFrom] = useState(urlParams.get("dateFrom") || "");
+  const [dateTo, setDateTo] = useState(urlParams.get("dateTo") || "");
+  const [deliveryDateFrom, setDeliveryDateFrom] = useState(urlParams.get("deliveryFrom") || "");
+  const [deliveryDateTo, setDeliveryDateTo] = useState(urlParams.get("deliveryTo") || "");
+  const [showFilters, setShowFilters] = useState(
+    !!(urlParams.get("dateFrom") || urlParams.get("dateTo") || urlParams.get("deliveryFrom") || urlParams.get("deliveryTo"))
+  );
+  
+  // 將篩選狀態同步到 URL 參數
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set("q", search);
+    if (status !== "all") params.set("status", status);
+    if (page > 0) params.set("page", String(page));
+    if (dateFrom) params.set("dateFrom", dateFrom);
+    if (dateTo) params.set("dateTo", dateTo);
+    if (deliveryDateFrom) params.set("deliveryFrom", deliveryDateFrom);
+    if (deliveryDateTo) params.set("deliveryTo", deliveryDateTo);
+    const qs = params.toString();
+    const newUrl = qs ? `/orders?${qs}` : "/orders";
+    window.history.replaceState(null, "", newUrl);
+  }, [search, status, page, dateFrom, dateTo, deliveryDateFrom, deliveryDateTo]);
   
   const pageSize = 20;
 

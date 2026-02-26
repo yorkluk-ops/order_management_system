@@ -6,6 +6,8 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStripeWebhook } from "../stripeWebhook";
 import { appRouter } from "../routers";
+import { generateQuotationPdf, generateInvoicePdf, generateReceiptPdf, OrderForPdf } from "../pdfService";
+import { getOrderById, getOrderProducts, getProductById } from "../db";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -40,6 +42,86 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+
+  // Direct PDF download endpoint
+  app.get("/api/pdf/:orderId/:type", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const type = req.params.type as "quotation" | "invoice" | "receipt";
+      
+      if (!orderId || !["quotation", "invoice", "receipt"].includes(type)) {
+        return res.status(400).json({ error: "Invalid parameters" });
+      }
+      
+      const order = await getOrderById(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      const orderProductsList = await getOrderProducts(orderId);
+      const productsWithDetails = await Promise.all(
+        orderProductsList.map(async (op: any) => {
+          const product = op.productId ? await getProductById(op.productId) : null;
+          return {
+            sku: op.sku || product?.sku || "",
+            name: op.productName || product?.name || "",
+            color: op.color || product?.color || "",
+            quantity: op.quantity,
+            isGift: op.isGift === "yes",
+          };
+        })
+      );
+      
+      const products = productsWithDetails.filter((p: any) => !p.isGift);
+      const gifts = productsWithDetails.filter((p: any) => p.isGift);
+      
+      const orderForPdf: OrderForPdf = {
+        orderNumber: order.orderNumber,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        customerEmail: order.customerEmail,
+        deliveryAddress: order.deliveryAddress,
+        deliveryDate: order.deliveryDate,
+        deliveryTimeSlot: order.deliveryTimeSlot,
+        orderAmount: order.orderAmount,
+        paidAmount: order.paidAmount,
+        paymentStatus: order.paymentStatus,
+        packageName: order.packageName,
+        packageVariant: order.packageVariant,
+        products,
+        gifts,
+        createdAt: order.createdAt,
+        notes: order.notes,
+      };
+      
+      let pdfBuffer: Buffer;
+      let filename: string;
+      const typeNames: Record<string, string> = { quotation: "報價單", invoice: "發票", receipt: "收據" };
+      
+      switch (type) {
+        case "quotation":
+          pdfBuffer = await generateQuotationPdf(orderForPdf);
+          break;
+        case "invoice":
+          pdfBuffer = await generateInvoicePdf(orderForPdf);
+          break;
+        case "receipt":
+          pdfBuffer = await generateReceiptPdf(orderForPdf);
+          break;
+        default:
+          return res.status(400).json({ error: "Invalid type" });
+      }
+      filename = `${typeNames[type]}_${order.orderNumber}.pdf`;
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("PDF generation error:", error);
+      res.status(500).json({ error: error.message || "PDF generation failed" });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

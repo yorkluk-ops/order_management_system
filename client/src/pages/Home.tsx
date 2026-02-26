@@ -1,11 +1,13 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ClipboardList, DollarSign, TrendingUp, Package, Clock, CheckCircle2, Truck, AlertCircle } from "lucide-react";
-import { ORDER_STATUS } from "../../../shared/packages";
+import { ClipboardList, DollarSign, TrendingUp, Package, Clock, CheckCircle2, Truck, AlertCircle, CalendarRange } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useMemo } from "react";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("zh-HK", {
@@ -71,10 +73,94 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// 快速日期範圍按鈕
+function QuickDateButton({ label, onClick, active }: { label: string; onClick: () => void; active?: boolean }) {
+  return (
+    <Button 
+      variant={active ? "default" : "outline"} 
+      size="sm" 
+      onClick={onClick}
+      className="text-xs"
+    >
+      {label}
+    </Button>
+  );
+}
+
 export default function Home() {
   const [, setLocation] = useLocation();
+  
+  // 日期區間狀態
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [activeQuick, setActiveQuick] = useState<string>("all");
+  
+  const dateRangeInput = useMemo(() => ({
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+  }), [dateFrom, dateTo]);
+  
   const { data: stats, isLoading: statsLoading } = trpc.stats.overview.useQuery();
+  const { data: rangeStats, isLoading: rangeLoading } = trpc.stats.byDateRange.useQuery(dateRangeInput);
   const { data: recentOrders, isLoading: ordersLoading } = trpc.orders.recent.useQuery({ limit: 5 });
+
+  // 快速日期範圍設定
+  const setQuickRange = (type: string) => {
+    const now = new Date();
+    let from = "";
+    let to = now.toISOString().split("T")[0];
+    
+    switch (type) {
+      case "today":
+        from = to;
+        break;
+      case "week": {
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        from = weekAgo.toISOString().split("T")[0];
+        break;
+      }
+      case "month": {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        from = monthStart.toISOString().split("T")[0];
+        break;
+      }
+      case "lastMonth": {
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        from = lastMonthStart.toISOString().split("T")[0];
+        to = lastMonthEnd.toISOString().split("T")[0];
+        break;
+      }
+      case "quarter": {
+        const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+        from = quarterStart.toISOString().split("T")[0];
+        break;
+      }
+      case "year": {
+        from = `${now.getFullYear()}-01-01`;
+        break;
+      }
+      case "all":
+        from = "";
+        to = "";
+        break;
+    }
+    
+    setDateFrom(from);
+    setDateTo(to);
+    setActiveQuick(type);
+  };
+
+  // 使用區間統計或全局統計
+  const displayStats = (dateFrom || dateTo) ? rangeStats : stats;
+  const displayLoading = (dateFrom || dateTo) ? rangeLoading : statsLoading;
+
+  // 計算每日銷售趨勢的最大值（用於圖表）
+  const maxDailySales = useMemo(() => {
+    if (!rangeStats?.dailyStats?.length) return 0;
+    return Math.max(...rangeStats.dailyStats.map(d => d.sales));
+  }, [rangeStats?.dailyStats]);
 
   return (
     <DashboardLayout>
@@ -91,33 +177,141 @@ export default function Home() {
           </Button>
         </div>
 
+        {/* 日期區間選擇器 */}
+        <Card className="bg-card rounded-xl border border-border/50 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <CalendarRange className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">統計日期範圍</span>
+              </div>
+              
+              {/* 快速選擇按鈕 */}
+              <div className="flex flex-wrap gap-2">
+                <QuickDateButton label="全部" onClick={() => setQuickRange("all")} active={activeQuick === "all"} />
+                <QuickDateButton label="今天" onClick={() => setQuickRange("today")} active={activeQuick === "today"} />
+                <QuickDateButton label="近 7 天" onClick={() => setQuickRange("week")} active={activeQuick === "week"} />
+                <QuickDateButton label="本月" onClick={() => setQuickRange("month")} active={activeQuick === "month"} />
+                <QuickDateButton label="上月" onClick={() => setQuickRange("lastMonth")} active={activeQuick === "lastMonth"} />
+                <QuickDateButton label="本季" onClick={() => setQuickRange("quarter")} active={activeQuick === "quarter"} />
+                <QuickDateButton label="今年" onClick={() => setQuickRange("year")} active={activeQuick === "year"} />
+              </div>
+              
+              {/* 自訂日期範圍 */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex items-center gap-2 flex-1">
+                  <Label className="text-sm text-muted-foreground whitespace-nowrap">從</Label>
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => {
+                      setDateFrom(e.target.value);
+                      setActiveQuick("custom");
+                    }}
+                    className="flex-1"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-1">
+                  <Label className="text-sm text-muted-foreground whitespace-nowrap">至</Label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setActiveQuick("custom");
+                    }}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="總訂單數"
-            value={stats?.totalOrders || 0}
+            title="訂單數"
+            value={displayStats?.totalOrders || 0}
             icon={ClipboardList}
-            loading={statsLoading}
+            loading={displayLoading}
+            trend={dateFrom || dateTo ? `${dateFrom || "開始"} ~ ${dateTo || "現在"}` : undefined}
           />
           <StatCard
-            title="總銷售額"
-            value={formatCurrency(stats?.totalSales || 0)}
+            title="銷售額"
+            value={formatCurrency(displayStats?.totalSales || 0)}
             icon={DollarSign}
-            loading={statsLoading}
+            loading={displayLoading}
           />
           <StatCard
-            title="總佣金"
-            value={formatCurrency(stats?.totalCommission || 0)}
+            title="佣金"
+            value={formatCurrency(displayStats?.totalCommission || 0)}
             icon={TrendingUp}
-            loading={statsLoading}
+            loading={displayLoading}
           />
           <StatCard
             title="待處理訂單"
-            value={stats?.pendingOrders || 0}
+            value={displayStats?.pendingOrders || 0}
             icon={Clock}
-            loading={statsLoading}
+            loading={displayLoading}
           />
         </div>
+
+        {/* 每日銷售趨勢 */}
+        {(dateFrom || dateTo) && rangeStats?.dailyStats && rangeStats.dailyStats.length > 0 && (
+          <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">每日銷售趨勢</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {rangeStats.dailyStats.map((day) => (
+                  <div key={day.date} className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground w-24 shrink-0 font-mono">
+                      {day.date}
+                    </span>
+                    <div className="flex-1 flex items-center gap-3">
+                      <div className="flex-1 h-7 bg-muted/30 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary/80 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                          style={{ width: `${maxDailySales > 0 ? Math.max((day.sales / maxDailySales) * 100, 5) : 5}%` }}
+                        >
+                          {day.sales > 0 && (
+                            <span className="text-xs text-primary-foreground font-medium whitespace-nowrap">
+                              {formatCurrency(day.sales)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground w-12 text-right shrink-0">
+                        {day.count} 單
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* 區間合計 */}
+              <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                <span className="text-sm font-medium">區間合計</span>
+                <div className="flex gap-6">
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">訂單：</span>
+                    <span className="font-semibold">{rangeStats.totalOrders} 單</span>
+                  </span>
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">銷售額：</span>
+                    <span className="font-semibold">{formatCurrency(rangeStats.totalSales)}</span>
+                  </span>
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">佣金：</span>
+                    <span className="font-semibold">{formatCurrency(rangeStats.totalCommission)}</span>
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Two Column Layout */}
         <div className="grid gap-6 lg:grid-cols-2">

@@ -11,6 +11,7 @@ import {
   updateOrderStatus,
   deleteOrder,
   getOrderStats,
+  getOrderStatsByDateRange,
   getRecentOrders,
   getOrdersForExport,
   getAllProducts,
@@ -548,6 +549,14 @@ export const appRouter = router({
     overview: protectedProcedure.query(async () => {
       return getOrderStats();
     }),
+    byDateRange: protectedProcedure
+      .input(z.object({
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return getOrderStatsByDateRange(input.dateFrom, input.dateTo);
+      }),
   }),
 
   // 產品管理
@@ -821,12 +830,29 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
         return getPaymentsByOrderId(input.orderId);
       }),
 
+    // 上傳付款證明圖片
+    uploadProofImage: protectedProcedure
+      .input(z.object({
+        filename: z.string(),
+        data: z.string(), // Base64 encoded
+        contentType: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { storagePut } = await import("./storage");
+        const buffer = Buffer.from(input.data, "base64");
+        const randomSuffix = Math.random().toString(36).substring(2, 10);
+        const fileKey = `payment-proofs/${Date.now()}-${randomSuffix}-${input.filename}`;
+        const { url } = await storagePut(fileKey, buffer, input.contentType);
+        return { url };
+      }),
+
     create: protectedProcedure
       .input(z.object({
         orderId: z.number(),
         paymentMethod: z.enum(["stripe", "cash", "bank_transfer", "other"]),
         amount: z.number().positive(),
         notes: z.string().optional(),
+        proofImageUrl: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const paymentId = await createPayment({
@@ -836,6 +862,7 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
           status: "completed",
           paidAt: new Date(),
           notes: input.notes || null,
+          proofImageUrl: input.proofImageUrl || null,
         });
         
         // 更新訂單付款狀態

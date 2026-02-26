@@ -185,6 +185,8 @@ export const payments = mysqlTable("payments", {
   stripePaymentLinkId: varchar("stripePaymentLinkId", { length: 255 }),
   // 付款狀態
   status: mysqlEnum("status", ["pending", "completed", "failed", "refunded"]).default("pending").notNull(),
+  // 銀行轉帳過數圖片
+  proofImageUrl: text("proofImageUrl"),
   // 備註
   notes: text("notes"),
   // 時間戳

@@ -368,6 +368,69 @@ export async function getOrderStats(): Promise<OrderStats> {
   };
 }
 
+export async function getOrderStatsByDateRange(dateFrom?: string, dateTo?: string) {
+  const db = await getDb();
+  if (!db) {
+    return {
+      totalOrders: 0,
+      totalSales: 0,
+      totalCommission: 0,
+      pendingOrders: 0,
+      completedOrders: 0,
+      dailyStats: [],
+    };
+  }
+
+  const conditions = [];
+  if (dateFrom) {
+    conditions.push(gte(orders.createdAt, new Date(dateFrom)));
+  }
+  if (dateTo) {
+    const endDate = new Date(dateTo);
+    endDate.setDate(endDate.getDate() + 1);
+    conditions.push(lte(orders.createdAt, endDate));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [totalResult, pendingResult, completedResult, dailyResult] = await Promise.all([
+    db.select({
+      count: sql<number>`count(*)`,
+      sales: sql<number>`COALESCE(SUM(orderAmount), 0)`,
+      commission: sql<number>`COALESCE(SUM(commission), 0)`,
+    }).from(orders).where(whereClause),
+    db.select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(whereClause ? and(whereClause, eq(orders.status, "pending")) : eq(orders.status, "pending")),
+    db.select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(whereClause ? and(whereClause, eq(orders.status, "completed")) : eq(orders.status, "completed")),
+    db.select({
+      date: sql<string>`DATE(createdAt)`,
+      count: sql<number>`count(*)`,
+      sales: sql<number>`COALESCE(SUM(orderAmount), 0)`,
+      commission: sql<number>`COALESCE(SUM(commission), 0)`,
+    }).from(orders)
+      .where(whereClause)
+      .groupBy(sql`DATE(createdAt)`)
+      .orderBy(sql`DATE(createdAt)`),
+  ]);
+
+  return {
+    totalOrders: Number(totalResult[0]?.count || 0),
+    totalSales: Number(totalResult[0]?.sales || 0),
+    totalCommission: Number(totalResult[0]?.commission || 0),
+    pendingOrders: Number(pendingResult[0]?.count || 0),
+    completedOrders: Number(completedResult[0]?.count || 0),
+    dailyStats: dailyResult.map(d => ({
+      date: String(d.date),
+      count: Number(d.count),
+      sales: Number(d.sales),
+      commission: Number(d.commission),
+    })),
+  };
+}
+
 export async function getRecentOrders(limit = 10): Promise<Order[]> {
   const db = await getDb();
   if (!db) return [];

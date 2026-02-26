@@ -19,14 +19,26 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Edit, Trash2, User, Package, Truck, DollarSign, Calendar, Clock, FileText, ShoppingBag, Gift, CreditCard, Download, Link as LinkIcon, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, User, Package, Truck, DollarSign, Calendar, Clock, FileText, ShoppingBag, Gift, CreditCard, Download, Link as LinkIcon, CheckCircle, AlertCircle, Loader2, Upload, Plus, Image as ImageIcon, Banknote } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -164,6 +176,84 @@ export default function OrderDetail() {
     },
   });
 
+  // 付款記錄
+  const { data: paymentRecords, refetch: refetchPayments } = trpc.payments.listByOrder.useQuery(
+    { orderId },
+    { enabled: orderId > 0 }
+  );
+
+  // 手動付款狀態
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank_transfer" | "other">("bank_transfer");
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentNotes, setPaymentNotes] = useState("");
+  const [proofImageUrl, setProofImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const uploadProofMutation = trpc.payments.uploadProofImage.useMutation();
+  
+  const createPaymentMutation = trpc.payments.create.useMutation({
+    onSuccess: () => {
+      toast.success("付款記錄已新增");
+      setShowPaymentDialog(false);
+      setPaymentAmount("");
+      setPaymentNotes("");
+      setProofImageUrl("");
+      refetch();
+      refetchPayments();
+    },
+    onError: (error) => {
+      toast.error("新增付款記錄失敗: " + error.message);
+    },
+  });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("檔案大小不能超過 5MB");
+      return;
+    }
+    
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1];
+        const result = await uploadProofMutation.mutateAsync({
+          filename: file.name,
+          data: base64,
+          contentType: file.type,
+        });
+        setProofImageUrl(result.url);
+        toast.success("圖片已上傳");
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error("上傳失敗");
+      setUploading(false);
+    }
+  };
+
+  const handleCreatePayment = () => {
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("請輸入有效的付款金額");
+      return;
+    }
+    createPaymentMutation.mutate({
+      orderId,
+      paymentMethod,
+      amount,
+      notes: paymentNotes || undefined,
+      proofImageUrl: proofImageUrl || undefined,
+    });
+  };
+
   const deleteMutation = trpc.orders.delete.useMutation({
     onSuccess: () => {
       toast.success("訂單已刪除");
@@ -185,8 +275,31 @@ export default function OrderDetail() {
     deleteMutation.mutate({ id: orderId });
   };
 
+  const [pdfLoading, setPdfLoading] = useState(false);
   const handleDownloadPdf = (type: "quotation" | "invoice" | "receipt") => {
-    generatePdfMutation.mutate({ orderId, type });
+    setPdfLoading(true);
+    // Use direct API endpoint for reliable PDF download
+    const url = `/api/pdf/${orderId}/${type}`;
+    fetch(url, { credentials: 'include' })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('PDF generation failed');
+        const blob = await res.blob();
+        const typeNames: Record<string, string> = { quotation: '報價單', invoice: '發票', receipt: '收據' };
+        const filename = `${typeNames[type]}_${order?.orderNumber || orderId}.pdf`;
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+        toast.success(`${filename} 已下載`);
+      })
+      .catch((err) => {
+        toast.error('生成 PDF 失敗: ' + err.message);
+      })
+      .finally(() => setPdfLoading(false));
   };
 
   const handleCreatePaymentLink = () => {
@@ -252,8 +365,8 @@ export default function OrderDetail() {
               {/* PDF 下載選單 */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" disabled={generatePdfMutation.isPending}>
-                    {generatePdfMutation.isPending ? (
+                  <Button variant="outline" disabled={pdfLoading}>
+                    {pdfLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <Download className="mr-2 h-4 w-4" />
@@ -525,6 +638,188 @@ export default function OrderDetail() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* 付款記錄 */}
+        <Card className="bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <Banknote className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">付款記錄</CardTitle>
+                  <CardDescription>所有付款活動記錄</CardDescription>
+                </div>
+              </div>
+              {order.paymentStatus !== "paid" && (
+                <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="mr-2 h-4 w-4" />
+                      新增付款
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>新增付款記錄</DialogTitle>
+                      <DialogDescription>
+                        訂單 {order.orderNumber} - 應付餘額 {formatCurrency(Number(order.orderAmount) - Number(order.paidAmount || 0))}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>付款方式</Label>
+                        <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bank_transfer">銀行轉帳</SelectItem>
+                            <SelectItem value="cash">現金</SelectItem>
+                            <SelectItem value="other">其他</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>付款金額 (HKD)</Label>
+                        <Input
+                          type="number"
+                          placeholder="輸入金額"
+                          value={paymentAmount}
+                          onChange={(e) => setPaymentAmount(e.target.value)}
+                        />
+                      </div>
+                      
+                      {/* 上傳過數證明 */}
+                      {paymentMethod === "bank_transfer" && (
+                        <div className="space-y-2">
+                          <Label>過數證明圖片</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleFileUpload}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={uploading}
+                              className="w-full"
+                            >
+                              {uploading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Upload className="mr-2 h-4 w-4" />
+                              )}
+                              {proofImageUrl ? "已上傳，點擊更換" : "上傳圖片"}
+                            </Button>
+                          </div>
+                          {proofImageUrl && (
+                            <div className="mt-2 relative">
+                              <img src={proofImageUrl} alt="過數證明" className="w-full max-h-48 object-contain rounded-lg border" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="space-y-2">
+                        <Label>備註</Label>
+                        <Textarea
+                          placeholder="例如：轉帳參考號碼、付款人姓名等"
+                          value={paymentNotes}
+                          onChange={(e) => setPaymentNotes(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>取消</Button>
+                      <Button onClick={handleCreatePayment} disabled={createPaymentMutation.isPending}>
+                        {createPaymentMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        確認付款
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {paymentRecords && paymentRecords.length > 0 ? (
+              <div className="space-y-3">
+                {paymentRecords.map((payment: any) => (
+                  <div key={payment.id} className="flex items-start gap-4 py-3 border-b border-border/50 last:border-0">
+                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
+                      payment.paymentMethod === "stripe" ? "bg-blue-100" :
+                      payment.paymentMethod === "bank_transfer" ? "bg-green-100" :
+                      payment.paymentMethod === "cash" ? "bg-yellow-100" : "bg-gray-100"
+                    }`}>
+                      {payment.paymentMethod === "stripe" ? (
+                        <CreditCard className="h-5 w-5 text-blue-600" />
+                      ) : payment.paymentMethod === "bank_transfer" ? (
+                        <Banknote className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <DollarSign className="h-5 w-5 text-yellow-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium">
+                          {payment.paymentMethod === "stripe" ? "Stripe 線上付款" :
+                           payment.paymentMethod === "bank_transfer" ? "銀行轉帳" :
+                           payment.paymentMethod === "cash" ? "現金" : "其他"}
+                        </p>
+                        <span className="font-semibold text-green-600">
+                          +{formatCurrency(Number(payment.amount))}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {payment.paidAt ? formatDateTime(payment.paidAt) : formatDateTime(payment.createdAt)}
+                      </p>
+                      {payment.notes && (
+                        <p className="text-sm text-muted-foreground mt-1">{payment.notes}</p>
+                      )}
+                      {payment.proofImageUrl && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => setPreviewImage(payment.proofImageUrl)}
+                            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                          >
+                            <ImageIcon className="h-3 w-3" />
+                            查看過數證明
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">尚無付款記錄</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 圖片預覽彈窗 */}
+        {previewImage && (
+          <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>過數證明</DialogTitle>
+              </DialogHeader>
+              <div className="flex justify-center">
+                <img src={previewImage} alt="過數證明" className="max-w-full max-h-[70vh] object-contain rounded-lg" />
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
 
         {/* Notes */}
