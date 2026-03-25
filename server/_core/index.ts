@@ -8,6 +8,7 @@ import { registerStripeWebhook } from "../stripeWebhook";
 import { appRouter } from "../routers";
 import { generateQuotationPdf, generateInvoicePdf, generateReceiptPdf, OrderForPdf } from "../pdfService";
 import { getOrderById, getOrderProducts, getProductById } from "../db";
+import { storagePut } from "../storage";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -43,7 +44,7 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
-  // Direct PDF download endpoint
+  // PDF generation endpoint - generates PDF, uploads to S3, returns URL
   app.get("/api/pdf/:orderId/:type", async (req, res) => {
     try {
       const orderId = parseInt(req.params.orderId);
@@ -96,7 +97,6 @@ async function startServer() {
       };
       
       let pdfBuffer: Buffer;
-      let filename: string;
       const typeNames: Record<string, string> = { quotation: "報價單", invoice: "發票", receipt: "收據" };
       
       switch (type) {
@@ -112,17 +112,22 @@ async function startServer() {
         default:
           return res.status(400).json({ error: "Invalid type" });
       }
-      filename = `${typeNames[type]}_${order.orderNumber}.pdf`;
       
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
-      res.setHeader("Content-Length", pdfBuffer.length);
-      res.send(pdfBuffer);
+      const filename = `${typeNames[type]}_${order.orderNumber}.pdf`;
+      
+      // Upload PDF to S3 and return the URL
+      const randomSuffix = Math.random().toString(36).substring(2, 10);
+      const fileKey = `pdfs/${order.orderNumber}/${type}-${randomSuffix}.pdf`;
+      const { url: pdfUrl } = await storagePut(fileKey, pdfBuffer, "application/pdf");
+      
+      // Return JSON with download URL
+      res.json({ url: pdfUrl, filename });
     } catch (error: any) {
       console.error("PDF generation error:", error);
       res.status(500).json({ error: error.message || "PDF generation failed" });
     }
   });
+
   // tRPC API
   app.use(
     "/api/trpc",

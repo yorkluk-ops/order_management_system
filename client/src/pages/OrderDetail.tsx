@@ -278,23 +278,19 @@ export default function OrderDetail() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const handleDownloadPdf = (type: "quotation" | "invoice" | "receipt") => {
     setPdfLoading(true);
-    // Use direct API endpoint for reliable PDF download
+    // Generate PDF, upload to S3, and open the S3 URL for download
     const url = `/api/pdf/${orderId}/${type}`;
     fetch(url, { credentials: 'include' })
       .then(async (res) => {
-        if (!res.ok) throw new Error('PDF generation failed');
-        const blob = await res.blob();
-        const typeNames: Record<string, string> = { quotation: '報價單', invoice: '發票', receipt: '收據' };
-        const filename = `${typeNames[type]}_${order?.orderNumber || orderId}.pdf`;
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(downloadUrl);
-        toast.success(`${filename} 已下載`);
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'PDF generation failed' }));
+          throw new Error(errorData.error || 'PDF generation failed');
+        }
+        const data = await res.json();
+        if (!data.url) throw new Error('No download URL returned');
+        // Open the S3 URL in a new tab for download
+        window.open(data.url, '_blank');
+        toast.success(`${data.filename || 'PDF'} 已生成，正在下載...`);
       })
       .catch((err) => {
         toast.error('生成 PDF 失敗: ' + err.message);
