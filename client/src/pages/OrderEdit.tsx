@@ -61,6 +61,9 @@ export default function OrderEdit() {
 
   const { data: products } = trpc.products.list.useQuery();
 
+  // Fetch shops from database
+  const { data: shopsList } = trpc.shops.list.useQuery();
+
   // 分離一般產品和贈品
   const regularProducts = useMemo(() => 
     products?.filter(p => p.isGift !== "yes") || [], 
@@ -84,8 +87,9 @@ export default function OrderEdit() {
       setTrackingNumber(order.trackingNumber || "");
       setNotes(order.notes || "");
       const sn = (order as any).shopName || "ReadyGo HK";
-      const presetShops = ["ReadyGo HK", "Poled HK", "Upang HK", "Shnuggle HK", "Baby Brezza HK", "Ultron Digital"];
-      if (presetShops.includes(sn)) {
+      // 檢查是否在資料庫商鋪列表中
+      const isKnownShop = shopsList?.some(s => s.name === sn);
+      if (isKnownShop || !shopsList) {
         setShopName(sn);
       } else {
         setShopName("custom");
@@ -94,7 +98,7 @@ export default function OrderEdit() {
       setOrderAmount(Number(order.orderAmount));
       setCommission(Number(order.commission));
     }
-  }, [order]);
+  }, [order, shopsList]);
 
   // 載入訂單產品明細
   useEffect(() => {
@@ -338,12 +342,13 @@ export default function OrderEdit() {
                     <SelectValue placeholder="選擇商鋪" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ReadyGo HK">ReadyGo HK</SelectItem>
-                    <SelectItem value="Poled HK">Poled HK</SelectItem>
-                    <SelectItem value="Upang HK">Upang HK</SelectItem>
-                    <SelectItem value="Shnuggle HK">Shnuggle HK</SelectItem>
-                    <SelectItem value="Baby Brezza HK">Baby Brezza HK</SelectItem>
-                    <SelectItem value="Ultron Digital">Ultron Digital</SelectItem>
+                    {shopsList && shopsList.length > 0 ? (
+                      shopsList.map((shop) => (
+                        <SelectItem key={shop.id} value={shop.name}>{shop.name}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="ReadyGo HK">ReadyGo HK</SelectItem>
+                    )}
                     <SelectItem value="custom">自訂商鋪名稱...</SelectItem>
                   </SelectContent>
                 </Select>

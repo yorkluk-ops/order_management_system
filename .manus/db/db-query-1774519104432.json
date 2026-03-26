@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO shops (name, sortOrder, isActive) VALUES \n('ReadyGo HK', 0, 'yes'),\n('Poled HK', 1, 'yes'),\n('Upang HK', 2, 'yes'),\n('Shnuggle HK', 3, 'yes'),\n('Baby Brezza HK', 4, 'yes'),\n('Ultron Digital', 5, 'yes')\nON DUPLICATE KEY UPDATE sortOrder = VALUES(sortOrder);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO shops (name, sortOrder, isActive) VALUES \n('ReadyGo HK', 0, 'yes'),\n('Poled HK', 1, 'yes'),\n('Upang HK', 2, 'yes'),\n('Shnuggle HK', 3, 'yes'),\n('Baby Brezza HK', 4, 'yes'),\n('Ultron Digital', 5, 'yes')\nON DUPLICATE KEY UPDATE sortOrder = VALUES(sortOrder);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1728
+}

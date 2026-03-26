@@ -50,6 +50,13 @@ import {
   getPaymentsByOrderId,
   getPaymentByStripeIntentId,
   updateOrderPaymentStatus,
+  // 商鋪管理
+  getAllShops,
+  getShopById,
+  getShopByName,
+  createShop,
+  updateShop,
+  deleteShop,
 } from "./db";
 import { ORDER_STATUS } from "../shared/packages";
 import { notifyOwner } from "./_core/notification";
@@ -278,6 +285,7 @@ export const appRouter = router({
         search: z.string().optional(),
         status: z.string().optional(),
         packageId: z.number().optional(),
+        shopName: z.string().optional(),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
         deliveryDateFrom: z.string().optional(),
@@ -290,6 +298,7 @@ export const appRouter = router({
           search: input.search,
           status: input.status,
           packageId: input.packageId,
+          shopName: input.shopName,
           dateFrom: input.dateFrom ? new Date(input.dateFrom) : undefined,
           dateTo: input.dateTo ? new Date(input.dateTo) : undefined,
           deliveryDateFrom: input.deliveryDateFrom ? new Date(input.deliveryDateFrom) : undefined,
@@ -1021,6 +1030,65 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
           url: result.url,
           sessionId: result.sessionId,
         };
+      }),
+  }),
+
+  // 商鋪管理
+  shops: router({
+    list: protectedProcedure.query(async () => {
+      return getAllShops();
+    }),
+
+    listAll: protectedProcedure.query(async () => {
+      return getAllShops(true);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1, "請輸入商鋪名稱"),
+        sortOrder: z.number().default(0),
+      }))
+      .mutation(async ({ input }) => {
+        const existing = await getShopByName(input.name);
+        if (existing) {
+          throw new Error("商鋪名稱已存在");
+        }
+        const id = await createShop({
+          name: input.name,
+          sortOrder: input.sortOrder,
+          isActive: "yes",
+        });
+        return { id, name: input.name };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        sortOrder: z.number().optional(),
+        isActive: z.enum(["yes", "no"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        if (data.name) {
+          const existing = await getShopByName(data.name);
+          if (existing && existing.id !== id) {
+            throw new Error("商鋪名稱已存在");
+          }
+        }
+        const updateData: Record<string, unknown> = {};
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+        if (data.isActive !== undefined) updateData.isActive = data.isActive;
+        await updateShop(id, updateData as any);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteShop(input.id);
+        return { success: true };
       }),
   }),
 });

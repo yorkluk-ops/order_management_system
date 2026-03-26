@@ -16,6 +16,7 @@ import MonthlyDelivery from "./pages/MonthlyDelivery";
 import PackageList from "./pages/PackageList";
 import CustomerList from "./pages/CustomerList";
 import CustomerDetail from "./pages/CustomerDetail";
+import ShopList from "./pages/ShopList";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/monthly-delivery" component={MonthlyDelivery} />
       <Route path="/customers" component={CustomerList} />
       <Route path="/customers/:id" component={CustomerDetail} />
+      <Route path="/shops" component={ShopList} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

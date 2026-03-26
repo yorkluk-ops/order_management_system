@@ -1,6 +1,6 @@
 import { eq, desc, and, like, or, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, customers, payments, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, InsertCustomer, InsertPayment, Order, Package, Product, OrderProduct, OrderPackage, Customer, Payment } from "../drizzle/schema";
+import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, customers, payments, shops, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, InsertCustomer, InsertPayment, Order, Package, Product, OrderProduct, OrderPackage, Customer, Payment, Shop, InsertShop } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -217,6 +217,7 @@ export interface OrderFilters {
   search?: string;
   status?: string;
   packageId?: number;
+  shopName?: string;
   dateFrom?: Date;
   dateTo?: Date;
   deliveryDateFrom?: Date;
@@ -245,6 +246,10 @@ export async function getOrders(filters?: OrderFilters, limit = 100, offset = 0)
   
   if (filters?.packageId) {
     conditions.push(eq(orders.packageId, filters.packageId));
+  }
+  
+  if (filters?.shopName) {
+    conditions.push(eq(orders.shopName, filters.shopName));
   }
   
   if (filters?.dateFrom) {
@@ -463,6 +468,10 @@ export async function getOrdersForExport(filters?: OrderFilters): Promise<Order[
   
   if (filters?.packageId) {
     conditions.push(eq(orders.packageId, filters.packageId));
+  }
+  
+  if (filters?.shopName) {
+    conditions.push(eq(orders.shopName, filters.shopName));
   }
   
   if (filters?.dateFrom) {
@@ -828,4 +837,55 @@ export async function getOrdersByCustomerId(customerId: number): Promise<Order[]
   if (!db) return [];
   
   return db.select().from(orders).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt));
+}
+
+
+// ==================== Shop Operations ====================
+
+export async function getAllShops(includeInactive = false): Promise<Shop[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (includeInactive) {
+    return db.select().from(shops).orderBy(shops.sortOrder, shops.name);
+  }
+  return db.select().from(shops).where(eq(shops.isActive, "yes")).orderBy(shops.sortOrder, shops.name);
+}
+
+export async function getShopById(id: number): Promise<Shop | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(shops).where(eq(shops.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getShopByName(name: string): Promise<Shop | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(shops).where(eq(shops.name, name)).limit(1);
+  return result[0];
+}
+
+export async function createShop(data: Omit<InsertShop, "id" | "createdAt" | "updatedAt">): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(shops).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateShop(id: number, data: Partial<InsertShop>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(shops).set(data).where(eq(shops.id, id));
+}
+
+export async function deleteShop(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(shops).where(eq(shops.id, id));
 }

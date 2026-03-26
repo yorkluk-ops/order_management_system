@@ -34,7 +34,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { trpc } from "@/lib/trpc";
-import { Search, Plus, ChevronLeft, ChevronRight, Trash2, Eye, Edit, Filter, X, Calendar } from "lucide-react";
+import { Search, Plus, ChevronLeft, ChevronRight, Trash2, Eye, Edit, Filter, X, Calendar, Store } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -94,6 +94,7 @@ export default function OrderList() {
   
   const [search, setSearch] = useState(urlParams.get("q") || "");
   const [status, setStatus] = useState<string>(urlParams.get("status") || "all");
+  const [shopName, setShopName] = useState<string>(urlParams.get("shop") || "all");
   const [page, setPage] = useState(Number(urlParams.get("page")) || 0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   
@@ -105,12 +106,16 @@ export default function OrderList() {
   const [showFilters, setShowFilters] = useState(
     !!(urlParams.get("dateFrom") || urlParams.get("dateTo") || urlParams.get("deliveryFrom") || urlParams.get("deliveryTo"))
   );
+
+  // 讀取商鋪列表
+  const { data: shopsList } = trpc.shops.list.useQuery();
   
   // 將篩選狀態同步到 URL 參數
   useEffect(() => {
     const params = new URLSearchParams();
     if (search) params.set("q", search);
     if (status !== "all") params.set("status", status);
+    if (shopName !== "all") params.set("shop", shopName);
     if (page > 0) params.set("page", String(page));
     if (dateFrom) params.set("dateFrom", dateFrom);
     if (dateTo) params.set("dateTo", dateTo);
@@ -119,20 +124,21 @@ export default function OrderList() {
     const qs = params.toString();
     const newUrl = qs ? `/orders?${qs}` : "/orders";
     window.history.replaceState(null, "", newUrl);
-  }, [search, status, page, dateFrom, dateTo, deliveryDateFrom, deliveryDateTo]);
+  }, [search, status, shopName, page, dateFrom, dateTo, deliveryDateFrom, deliveryDateTo]);
   
   const pageSize = 20;
 
   const filters = useMemo(() => ({
     search: search || undefined,
     status: status !== "all" ? status : undefined,
+    shopName: shopName !== "all" ? shopName : undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     deliveryDateFrom: deliveryDateFrom || undefined,
     deliveryDateTo: deliveryDateTo || undefined,
     limit: pageSize,
     offset: page * pageSize,
-  }), [search, status, dateFrom, dateTo, deliveryDateFrom, deliveryDateTo, page]);
+  }), [search, status, shopName, dateFrom, dateTo, deliveryDateFrom, deliveryDateTo, page]);
 
   const { data, isLoading, refetch } = trpc.orders.list.useQuery(filters);
   const deleteMutation = trpc.orders.delete.useMutation({
@@ -214,6 +220,28 @@ export default function OrderList() {
                     <SelectItem value="delivering">配送中</SelectItem>
                     <SelectItem value="completed">已完成</SelectItem>
                     <SelectItem value="cancelled">已取消</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={shopName}
+                  onValueChange={(value) => {
+                    setShopName(value);
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <div className="flex items-center gap-2">
+                      <Store className="h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="商鋪篩選" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部商鋪</SelectItem>
+                    {shopsList?.map((shop) => (
+                      <SelectItem key={shop.id} value={shop.name}>
+                        {shop.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Button
@@ -300,6 +328,7 @@ export default function OrderList() {
                     <TableHead className="w-[120px]">訂單編號</TableHead>
                     <TableHead>客戶姓名</TableHead>
                     <TableHead className="hidden md:table-cell">聯絡電話</TableHead>
+                    <TableHead className="hidden lg:table-cell">商鋪</TableHead>
                     <TableHead className="hidden lg:table-cell">套餐</TableHead>
                     <TableHead className="text-right">金額</TableHead>
                     <TableHead className="hidden sm:table-cell">購買日期</TableHead>
@@ -315,6 +344,7 @@ export default function OrderList() {
                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
                         <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
@@ -334,6 +364,9 @@ export default function OrderList() {
                         <TableCell className="font-medium">{order.customerName}</TableCell>
                         <TableCell className="hidden md:table-cell text-muted-foreground">
                           {order.customerPhone}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground">
+                          <span className="text-xs bg-accent px-2 py-0.5 rounded">{order.shopName || '-'}</span>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">
                           {order.packageName}
@@ -387,7 +420,7 @@ export default function OrderList() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={9} className="h-32 text-center">
+                      <TableCell colSpan={10} className="h-32 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <p className="text-muted-foreground">沒有找到訂單</p>
                           <Button variant="outline" size="sm" onClick={() => setLocation("/orders/new")}>

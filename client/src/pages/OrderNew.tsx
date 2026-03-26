@@ -72,6 +72,9 @@ export default function OrderNew() {
   // Fetch products
   const { data: products } = trpc.products.list.useQuery();
 
+  // Fetch shops from database
+  const { data: shopsList } = trpc.shops.list.useQuery();
+
   // 分離一般產品和贈品
   const regularProducts = useMemo(() => 
     products?.filter(p => p.isGift !== "yes") || [], 
@@ -410,12 +413,13 @@ export default function OrderNew() {
                     <SelectValue placeholder="選擇商鋪" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ReadyGo HK">ReadyGo HK</SelectItem>
-                    <SelectItem value="Poled HK">Poled HK</SelectItem>
-                    <SelectItem value="Upang HK">Upang HK</SelectItem>
-                    <SelectItem value="Shnuggle HK">Shnuggle HK</SelectItem>
-                    <SelectItem value="Baby Brezza HK">Baby Brezza HK</SelectItem>
-                    <SelectItem value="Ultron Digital">Ultron Digital</SelectItem>
+                    {shopsList && shopsList.length > 0 ? (
+                      shopsList.map((shop) => (
+                        <SelectItem key={shop.id} value={shop.name}>{shop.name}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="ReadyGo HK">ReadyGo HK</SelectItem>
+                    )}
                     <SelectItem value="custom">自訂商鋪名稱...</SelectItem>
                   </SelectContent>
                 </Select>
