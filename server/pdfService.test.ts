@@ -16,11 +16,11 @@ const sampleOrder: OrderForPdf = {
   packageName: "嬰兒套餐A",
   packageVariant: null,
   products: [
-    { sku: "UP911A-WH", name: "UP911 白色", color: "白色", quantity: 1, isGift: false },
-    { sku: "UP911A-GR", name: "UP911 灰色", color: "灰色", quantity: 2, isGift: false },
+    { sku: "UP911A-WH", name: "UP911 白色", color: "白色", quantity: 1, unitPrice: 2388, isGift: false },
+    { sku: "UP911A-GR", name: "UP911 灰色", color: "灰色", quantity: 2, unitPrice: 2388, isGift: false },
   ],
   gifts: [
-    { sku: "SBP-WGY-INT", name: "Shnuggle 嬰兒沐浴盤", color: "白色", quantity: 1, isGift: true },
+    { sku: "SBP-WGY-INT", name: "Shnuggle 嬰兒沐浴盤", color: "白色", quantity: 1, unitPrice: 0, isGift: true },
   ],
   createdAt: new Date("2026-02-25"),
   notes: "請於下午送貨",
@@ -80,5 +80,32 @@ describe("PDF Service", () => {
     const buffer = await generateReceiptPdf(paidOrder);
     expect(buffer).toBeInstanceOf(Buffer);
     expect(buffer.length).toBeGreaterThan(0);
+  }, 30000);
+
+  it("generates PDF with unitPrice columns when products have prices", async () => {
+    const orderWithPrices: OrderForPdf = {
+      ...sampleOrder,
+      products: [
+        { sku: "BB-BWP", name: "Baby Brezza Bottle Washer Pro", color: "", quantity: 1, unitPrice: 2380, isGift: false },
+        { sku: "SHN-BST-STRP", name: "SHNUGGLE 洗澡架", color: "白色", quantity: 2, unitPrice: 299, isGift: false },
+      ],
+    };
+    const buffer = await generateQuotationPdf(orderWithPrices);
+    expect(buffer).toBeInstanceOf(Buffer);
+    expect(buffer.length).toBeGreaterThan(0);
+    expect(buffer.toString("utf-8", 0, 5)).toBe("%PDF-");
+  }, 30000);
+
+  it("generates PDF without unitPrice columns when products have no prices", async () => {
+    const orderWithoutPrices: OrderForPdf = {
+      ...sampleOrder,
+      products: [
+        { sku: "5201110", name: "POLED AIRLUV4 甜甜圈雪藍色", color: "", quantity: 1, unitPrice: 0, isGift: false },
+      ],
+    };
+    const buffer = await generateQuotationPdf(orderWithoutPrices);
+    expect(buffer).toBeInstanceOf(Buffer);
+    expect(buffer.length).toBeGreaterThan(0);
+    expect(buffer.toString("utf-8", 0, 5)).toBe("%PDF-");
   }, 30000);
 });

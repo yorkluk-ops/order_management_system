@@ -126,6 +126,8 @@ export const orderProducts = mysqlTable("orderProducts", {
   productName: varchar("productName", { length: 255 }).notNull(),
   color: varchar("color", { length: 100 }),
   quantity: int("quantity").default(1).notNull(),
+  // 產品單價（記錄下單時的售價）
+  unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).default("0"),
   // 標記是否為贈品
   isGift: mysqlEnum("isGift", ["yes", "no"]).default("no").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -337,6 +337,7 @@ export default function ProductList() {
                     <TableRow>
                       <TableHead>SKU</TableHead>
                       <TableHead>產品名稱</TableHead>
+                      <TableHead className="text-right">單價 (HK$)</TableHead>
                       <TableHead>顏色</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
@@ -361,6 +362,13 @@ export default function ProductList() {
                           {product.sku}
                         </TableCell>
                         <TableCell>{product.name}</TableCell>
+                        <TableCell className="text-right">
+                          {Number(product.price) > 0 ? (
+                            <span className="font-medium text-emerald-600">${Number(product.price).toLocaleString()}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {product.color ? (
                             <div className="flex items-center gap-2">

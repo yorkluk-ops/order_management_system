@@ -19,6 +19,7 @@ export interface OrderForPdf {
     name: string;
     color: string;
     quantity: number;
+    unitPrice?: number;
     isGift: boolean;
   }>;
   gifts: Array<{
@@ -26,6 +27,7 @@ export interface OrderForPdf {
     name: string;
     color: string;
     quantity: number;
+    unitPrice?: number;
     isGift: boolean;
   }>;
   createdAt: Date | string;
@@ -61,15 +63,23 @@ function buildHtml(order: OrderForPdf, docType: string, docTitle: string): strin
   const paidAmount = Number(order.paidAmount || 0);
   const balance = orderAmount - paidAmount;
 
-  const productRows = order.products.map((p) => `
+  const hasUnitPrice = order.products.some(p => (p.unitPrice || 0) > 0);
+
+  const productRows = order.products.map((p) => {
+    const unitPrice = Number(p.unitPrice || 0);
+    const subtotal = unitPrice * p.quantity;
+    return `
     <tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #eee;">
         <div style="font-weight: 500;">${escapeHtml(p.name)}</div>
         <div style="font-size: 12px; color: #888;">SKU: ${escapeHtml(p.sku)}${p.color ? ` | ${escapeHtml(p.color)}` : ""}</div>
       </td>
+      ${hasUnitPrice ? `<td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: right;">${unitPrice > 0 ? formatCurrency(unitPrice) : '-'}</td>` : ''}
       <td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: center;">${p.quantity}</td>
+      ${hasUnitPrice ? `<td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: 500;">${unitPrice > 0 ? formatCurrency(subtotal) : '-'}</td>` : ''}
     </tr>
-  `).join("");
+  `;
+  }).join("");
 
   const giftRows = order.gifts.map((g) => `
     <tr>
@@ -253,9 +263,19 @@ function buildHtml(order: OrderForPdf, docType: string, docTitle: string): strin
       font-weight: 600;
     }
     
-    .products-table th:last-child {
+    .products-table th:nth-child(2) {
+      text-align: right;
+      width: 100px;
+    }
+    
+    .products-table th:nth-child(3) {
       text-align: center;
-      width: 80px;
+      width: 60px;
+    }
+    
+    .products-table th:last-child {
+      text-align: right;
+      width: 100px;
     }
     
     .section-title {
@@ -429,11 +449,13 @@ function buildHtml(order: OrderForPdf, docType: string, docTitle: string): strin
       <thead>
         <tr>
           <th>商品</th>
+          ${hasUnitPrice ? '<th style="text-align: right;">單價</th>' : ''}
           <th style="text-align: center;">數量</th>
+          ${hasUnitPrice ? '<th style="text-align: right;">小計</th>' : ''}
         </tr>
       </thead>
       <tbody>
-        ${productRows || '<tr><td colspan="2" style="padding: 12px; text-align: center; color: #999;">無產品記錄</td></tr>'}
+        ${productRows || `<tr><td colspan="${hasUnitPrice ? 4 : 2}" style="padding: 12px; text-align: center; color: #999;">無產品記錄</td></tr>`}
       </tbody>
     </table>
     

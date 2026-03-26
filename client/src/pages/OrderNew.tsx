@@ -23,6 +23,7 @@ interface SelectedProduct {
   name: string;
   color: string;
   quantity: number;
+  unitPrice: number;
 }
 
 interface SelectedPackage {
@@ -82,11 +83,17 @@ export default function OrderNew() {
     [products]
   );
 
-  // Calculate totals from selected packages
+  // Calculate totals from selected packages + single product prices
+  const productsSubtotal = useMemo(() => {
+    return selectedProducts.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0);
+  }, [selectedProducts]);
+
   const totalAmount = useMemo(() => {
     const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price * pkg.quantity, 0);
-    return packagesTotal + customAmount;
-  }, [selectedPackages, customAmount]);
+    // 如果有單件產品且沒有手動輸入自訂金額，則自動使用產品單價計算
+    const productAmount = customAmount > 0 ? customAmount : productsSubtotal;
+    return packagesTotal + productAmount;
+  }, [selectedPackages, customAmount, productsSubtotal]);
 
   const totalCommission = useMemo(() => {
     const packagesCommission = selectedPackages.reduce((sum, pkg) => sum + pkg.commission * pkg.quantity, 0);
@@ -96,7 +103,7 @@ export default function OrderNew() {
   // Generate package name string
   const packageNameString = useMemo(() => {
     if (selectedPackages.length === 0) {
-      if (customAmount > 0) return "其他｜單件產品購買";
+      if (customAmount > 0 || productsSubtotal > 0) return "其他｜單件產品購買";
       return "";
     }
     const names = selectedPackages.map(pkg => 
@@ -126,8 +133,8 @@ export default function OrderNew() {
       return;
     }
 
-    if (selectedPackages.length === 0 && customAmount === 0) {
-      toast.error("請至少選擇一個套餐或輸入自訂金額");
+    if (selectedPackages.length === 0 && customAmount === 0 && productsSubtotal === 0) {
+      toast.error("請至少選擇一個套餐、選擇有單價的產品或輸入自訂金額");
       return;
     }
 
@@ -145,12 +152,13 @@ export default function OrderNew() {
       deliveryDate: deliveryDate || undefined,
       deliveryTimeSlot: deliveryTimeSlot || undefined,
       notes: notes || undefined,
-      // 傳送產品明細
+      // 傳送產品明細（包含單價）
       products: selectedProducts.map(p => ({
         sku: p.sku,
         productName: p.name,
         color: p.color || undefined,
         quantity: p.quantity,
+        unitPrice: p.unitPrice || 0,
       })),
       // 傳送贈品明細
       gifts: selectedGifts.map(g => ({
@@ -158,6 +166,7 @@ export default function OrderNew() {
         productName: g.name,
         color: g.color || undefined,
         quantity: g.quantity,
+        unitPrice: 0,
       })),
       // 傳送套餐贈品產品 ID（用於扣除庫存）
       packageGiftProductIds: selectedPackages
@@ -244,6 +253,7 @@ export default function OrderNew() {
           name: product.name,
           color: product.color || "",
           quantity: 1,
+          unitPrice: Number(product.price) || 0,
         },
       ]);
       toast.success(`已新增 ${product.name}`);
@@ -280,6 +290,7 @@ export default function OrderNew() {
           name: gift.name,
           color: gift.color || "",
           quantity: 1,
+          unitPrice: 0,
         },
       ]);
       toast.success(`已新增贈品 ${gift.name}`);
@@ -529,7 +540,10 @@ export default function OrderNew() {
                   單件產品購買（選填）
                 </p>
                 <p className="text-xs text-amber-700">
-                  如客戶只購買單件產品而非套餐，請在此輸入金額
+                  {productsSubtotal > 0
+                    ? `系統已根據產品單價自動計算金額 $${productsSubtotal.toLocaleString()}。如需手動覆蓋，請在下方輸入自訂金額。`
+                    : `如客戶只購買單件產品而非套餐，可在產品明細中設定單價自動計算，或在此手動輸入金額`
+                  }
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
@@ -591,6 +605,9 @@ export default function OrderNew() {
                             {product.color && (
                               <span className="text-muted-foreground">({product.color})</span>
                             )}
+                            {Number(product.price) > 0 && (
+                              <span className="text-emerald-600 font-medium">${Number(product.price).toLocaleString()}</span>
+                            )}
                           </div>
                         </SelectItem>
                       ))
@@ -620,13 +637,33 @@ export default function OrderNew() {
                   {selectedProducts.map((product) => (
                     <div
                       key={product.productId}
-                      className="flex items-center justify-between py-2 border-b last:border-0"
+                      className="flex items-center justify-between py-2 border-b last:border-0 gap-3"
                     >
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{product.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {product.sku} {product.color ? `| ${product.color}` : ""}
                         </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground mr-1">$</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          className="w-20 h-8 text-sm text-right"
+                          value={product.unitPrice || ""}
+                          placeholder="單價"
+                          onChange={(e) => {
+                            const newPrice = Number(e.target.value) || 0;
+                            setSelectedProducts(prev =>
+                              prev.map(p =>
+                                p.productId === product.productId
+                                  ? { ...p, unitPrice: newPrice }
+                                  : p
+                              )
+                            );
+                          }}
+                        />
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -658,8 +695,21 @@ export default function OrderNew() {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
+                      {product.unitPrice > 0 && (
+                        <div className="text-right min-w-[80px]">
+                          <p className="text-sm font-semibold text-emerald-600">
+                            ${(product.unitPrice * product.quantity).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))}
+                  {productsSubtotal > 0 && (
+                    <div className="flex justify-end pt-2 border-t">
+                      <span className="text-sm text-muted-foreground mr-2">產品小計：</span>
+                      <span className="text-sm font-bold text-emerald-600">${productsSubtotal.toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-6 border rounded-lg bg-muted/20">
@@ -875,10 +925,19 @@ export default function OrderNew() {
                   </span>
                 </div>
                 {selectedProducts.length > 0 && (
-                  <div className="pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">
-                      產品明細：{selectedProducts.map(p => `${p.name} x${p.quantity}`).join("、")}
-                    </span>
+                  <div className="pt-2 border-t space-y-1">
+                    <span className="text-sm text-muted-foreground font-medium">產品明細：</span>
+                    {selectedProducts.map(p => (
+                      <div key={p.productId} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {p.name} x{p.quantity}
+                          {p.unitPrice > 0 && <span className="ml-1">@${p.unitPrice.toLocaleString()}</span>}
+                        </span>
+                        {p.unitPrice > 0 && (
+                          <span className="font-medium">${(p.unitPrice * p.quantity).toLocaleString()}</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
                 {selectedGifts.length > 0 && (

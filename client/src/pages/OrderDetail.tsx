@@ -596,13 +596,29 @@ export default function OrderDetail() {
                   <div key={index} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
                     <div className="flex-1">
                       <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">{product.sku} | {product.color}</p>
+                      <p className="text-sm text-muted-foreground">{product.sku} {product.color ? `| ${product.color}` : ""}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex items-center gap-4">
+                      {product.unitPrice > 0 && (
+                        <span className="text-sm text-muted-foreground">@${Number(product.unitPrice).toLocaleString()}</span>
+                      )}
                       <span className="font-medium">x{product.quantity}</span>
+                      {product.unitPrice > 0 && (
+                        <span className="font-semibold text-emerald-600 min-w-[80px] text-right">
+                          ${(Number(product.unitPrice) * product.quantity).toLocaleString()}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
+                {order.products.some((p: any) => p.unitPrice > 0) && (
+                  <div className="flex justify-end pt-2 border-t">
+                    <span className="text-sm text-muted-foreground mr-2">產品小計：</span>
+                    <span className="font-bold text-emerald-600">
+                      ${order.products.reduce((sum: number, p: any) => sum + (Number(p.unitPrice) || 0) * p.quantity, 0).toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

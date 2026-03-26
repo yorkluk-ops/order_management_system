@@ -202,6 +202,7 @@ export const appRouter = router({
           productName: z.string(),
           color: z.string().optional(),
           quantity: z.number().positive(),
+          unitPrice: z.number().nonnegative().optional(),
           isGift: z.boolean().optional(),
         })).optional(),
         // 贈品明細
@@ -210,6 +211,7 @@ export const appRouter = router({
           productName: z.string(),
           color: z.string().optional(),
           quantity: z.number().positive(),
+          unitPrice: z.number().nonnegative().optional(),
         })).optional(),
         // 套餐贈品產品 ID 列表（用於扣除庫存）
         packageGiftProductIds: z.array(z.number()).optional(),
@@ -245,6 +247,7 @@ export const appRouter = router({
             productName: p.productName,
             color: p.color || null,
             quantity: p.quantity,
+            unitPrice: (p.unitPrice !== undefined && p.unitPrice !== null) ? p.unitPrice.toString() : "0",
             isGift: p.isGift ? "yes" : "no",
           })));
 
@@ -316,6 +319,7 @@ export const appRouter = router({
               sku: op.sku || product?.sku || '',
               name: op.productName || product?.name || '',
               color: op.color || product?.color || '',
+              unitPrice: Number(op.unitPrice || 0),
               isGift: op.isGift === 'yes',
             };
           })
@@ -354,6 +358,7 @@ export const appRouter = router({
           productName: z.string(),
           color: z.string().optional(),
           quantity: z.number().positive(),
+          unitPrice: z.number().nonnegative().optional(),
         })).optional(),
         // 贈品明細
         gifts: z.array(z.object({
@@ -361,6 +366,7 @@ export const appRouter = router({
           productName: z.string(),
           color: z.string().optional(),
           quantity: z.number().positive(),
+          unitPrice: z.number().nonnegative().optional(),
         })).optional(),
       }))
       .mutation(async ({ input }) => {
@@ -406,6 +412,7 @@ export const appRouter = router({
               productName: p.productName,
               color: p.color || null,
               quantity: p.quantity,
+              unitPrice: (p.unitPrice !== undefined && p.unitPrice !== null) ? p.unitPrice.toString() : "0",
               isGift: p.isGift ? "yes" : "no",
             })));
 
@@ -499,6 +506,7 @@ export const appRouter = router({
                   name: op.productName || product?.name || '',
                   color: op.color || product?.color || '',
                   quantity: op.quantity,
+                  unitPrice: Number(op.unitPrice || 0),
                   isGift: op.isGift === 'yes',
                 };
               })
@@ -508,8 +516,11 @@ export const appRouter = router({
             const products = productsWithDetails.filter(p => !p.isGift);
             const gifts = productsWithDetails.filter(p => p.isGift);
             
-            // 格式化產品明細字串
-            const productDetails = products.map(p => `${p.sku} | ${p.name} (${p.color}) x${p.quantity}`).join('\n');
+            // 格式化產品明細字串（包含單價）
+            const productDetails = products.map(p => {
+              const priceStr = p.unitPrice > 0 ? ` @$${p.unitPrice}` : '';
+              return `${p.sku} | ${p.name} (${p.color}) x${p.quantity}${priceStr}`;
+            }).join('\n');
             const giftDetails = gifts.map(g => `${g.sku} | ${g.name} (${g.color}) x${g.quantity}`).join('\n');
             
             return {
