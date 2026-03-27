@@ -206,3 +206,7 @@
 
 ## Bug 修復：建立訂單 packageName 驗證錯誤
 - [x] 修復「其他｜單件產品購買」建立訂單時 packageName 空字串驗證失敗
+
+## Bug 修復：生產環境 PDF 生成失敗（Chromium 不可用）
+- [x] 改用 PDFKit + sharp 的 PDF 生成方案（不依賴 Chromium）
+- [x] 確保報價單、發票、收據三種 PDF 均能在生產環境正常生成

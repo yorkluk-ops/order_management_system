@@ -1,4 +1,14 @@
-import puppeteer from "puppeteer";
+import PDFDocument from "pdfkit";
+import https from "https";
+import http from "http";
+import fs from "fs";
+import path from "path";
+import sharp from "sharp";
+
+const FONT_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663035885409/jMRCeFnSdEfaYMvUXfCyak/NotoSansTC_4cb240ba.ttf";
+const FONT_CACHE_PATH = path.join("/tmp", "NotoSansTC.ttf");
+const LOGO_CDN_URL = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663035885409/jbMQqpbKgBQzaPKM.png";
+const LOGO_CACHE_PATH = path.join("/tmp", "company_logo.png");
 
 export interface OrderForPdf {
   orderNumber: string;
@@ -54,523 +64,373 @@ function getTimeSlotLabel(slot: string | null): string {
   return slots[slot] || slot;
 }
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+async function downloadFile(url: string, destPath: string): Promise<void> {
+  if (fs.existsSync(destPath) && fs.statSync(destPath).size > 0) {
+    return; // Already cached
+  }
+  
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith("https") ? https : http;
+    const request = protocol.get(url, (response) => {
+      // Handle redirects
+      if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        downloadFile(response.headers.location, destPath).then(resolve).catch(reject);
+        return;
+      }
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to download: ${response.statusCode}`));
+        return;
+      }
+      const fileStream = fs.createWriteStream(destPath);
+      response.pipe(fileStream);
+      fileStream.on("finish", () => { fileStream.close(); resolve(); });
+      fileStream.on("error", reject);
+    });
+    request.on("error", reject);
+    request.setTimeout(30000, () => { request.destroy(); reject(new Error("Download timeout")); });
+  });
 }
 
-function buildHtml(order: OrderForPdf, docType: string, docTitle: string): string {
+async function ensureFont(): Promise<string> {
+  await downloadFile(FONT_CDN_URL, FONT_CACHE_PATH);
+  return FONT_CACHE_PATH;
+}
+
+const LOGO_PNG_CACHE_PATH = path.join("/tmp", "company_logo_converted.png");
+
+async function ensureLogo(): Promise<Buffer | null> {
+  try {
+    // Check if already converted
+    if (fs.existsSync(LOGO_PNG_CACHE_PATH) && fs.statSync(LOGO_PNG_CACHE_PATH).size > 0) {
+      return fs.readFileSync(LOGO_PNG_CACHE_PATH);
+    }
+    await downloadFile(LOGO_CDN_URL, LOGO_CACHE_PATH);
+    // Convert to PNG (the file might be WebP despite .png extension)
+    const pngBuffer = await sharp(LOGO_CACHE_PATH).png().toBuffer();
+    fs.writeFileSync(LOGO_PNG_CACHE_PATH, pngBuffer);
+    return pngBuffer;
+  } catch (err) {
+    console.error("[PDF] Logo load error:", err);
+    return null;
+  }
+}
+
+// Colors
+const BLUE = "#1e40af";
+const LIGHT_BLUE = "#2563eb";
+const DARK_GRAY = "#333333";
+const MEDIUM_GRAY = "#666666";
+const LIGHT_GRAY = "#888888";
+const BORDER_COLOR = "#e2e8f0";
+const BG_LIGHT = "#f8fafc";
+const WHITE = "#ffffff";
+
+function drawRoundedRect(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number, r: number) {
+  doc.moveTo(x + r, y)
+    .lineTo(x + w - r, y)
+    .quadraticCurveTo(x + w, y, x + w, y + r)
+    .lineTo(x + w, y + h - r)
+    .quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    .lineTo(x + r, y + h)
+    .quadraticCurveTo(x, y + h, x, y + h - r)
+    .lineTo(x, y + r)
+    .quadraticCurveTo(x, y, x + r, y);
+}
+
+async function buildPdf(order: OrderForPdf, docType: string, docTitle: string): Promise<Buffer> {
+  const fontPath = await ensureFont();
+  const logoBuffer = await ensureLogo();
+
   const orderAmount = Number(order.orderAmount);
   const paidAmount = Number(order.paidAmount || 0);
   const balance = orderAmount - paidAmount;
-
   const hasUnitPrice = order.products.some(p => (p.unitPrice || 0) > 0);
 
-  const productRows = order.products.map((p) => {
-    const unitPrice = Number(p.unitPrice || 0);
-    const subtotal = unitPrice * p.quantity;
-    return `
-    <tr>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #eee;">
-        <div style="font-weight: 500;">${escapeHtml(p.name)}</div>
-        <div style="font-size: 12px; color: #888;">SKU: ${escapeHtml(p.sku)}${p.color ? ` | ${escapeHtml(p.color)}` : ""}</div>
-      </td>
-      ${hasUnitPrice ? `<td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: right;">${unitPrice > 0 ? formatCurrency(unitPrice) : '-'}</td>` : ''}
-      <td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: center;">${p.quantity}</td>
-      ${hasUnitPrice ? `<td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: 500;">${unitPrice > 0 ? formatCurrency(subtotal) : '-'}</td>` : ''}
-    </tr>
-  `;
-  }).join("");
+  const doc = new PDFDocument({
+    size: "A4",
+    margins: { top: 40, bottom: 40, left: 45, right: 45 },
+    bufferPages: true,
+  });
 
-  const giftRows = order.gifts.map((g) => `
-    <tr>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #eee;">
-        <div style="font-weight: 500; color: #334155;">🎁 ${escapeHtml(g.name)}</div>
-        <div style="font-size: 12px; color: #888;">SKU: ${escapeHtml(g.sku)}${g.color ? ` | ${escapeHtml(g.color)}` : ""}</div>
-      </td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: center;">${g.quantity}</td>
-    </tr>
-  `).join("");
+  // Register font
+  doc.registerFont("NotoSansTC", fontPath);
+  doc.font("NotoSansTC");
 
-  const paymentStatusText = order.paymentStatus === "paid" ? "已付款" : 
-    order.paymentStatus === "partial" ? "部分付款" : "未付款";
-  const statusClass = order.paymentStatus === "paid" ? "status-paid" : 
-    order.paymentStatus === "partial" ? "status-partial" : "status-unpaid";
+  const chunks: Buffer[] = [];
+  doc.on("data", (chunk: Buffer) => chunks.push(chunk));
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-    
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
-      font-size: 14px;
-      color: #333;
-      line-height: 1.6;
-      background: white;
-    }
-    
-    .page {
-      width: 210mm;
-      min-height: 297mm;
-      padding: 20mm;
-      position: relative;
-    }
-    
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 3px solid #2563eb;
-    }
-    
-    .company-info { flex: 1; display: flex; align-items: flex-start; gap: 14px; }
-    
-    .company-logo {
-      width: 60px;
-      height: 60px;
-      flex-shrink: 0;
-    }
-    
-    .company-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    
-    .company-text { flex: 1; }
-    
-    .company-name {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1e40af;
-      margin-bottom: 2px;
-    }
-    
-    .company-name-en {
-      font-size: 13px;
-      font-weight: 500;
-      color: #1e40af;
-      margin-bottom: 4px;
-    }
-    
-    .company-detail {
-      font-size: 12px;
-      color: #666;
-      line-height: 1.8;
-    }
-    
-    .doc-title-box { text-align: right; }
-    
-    .doc-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: #1e40af;
-      margin-bottom: 8px;
-    }
-    
-    .doc-number {
-      font-size: 13px;
-      color: #666;
-    }
-    
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 25px;
-    }
-    
-    .info-box {
-      background: #f8fafc;
-      border-radius: 8px;
-      padding: 16px;
-      border: 1px solid #e2e8f0;
-    }
-    
-    .info-box-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #1e40af;
-      margin-bottom: 10px;
-      letter-spacing: 0.5px;
-    }
-    
-    .info-row {
-      display: flex;
-      margin-bottom: 4px;
-    }
-    
-    .info-label {
-      width: 80px;
-      font-size: 12px;
-      color: #888;
-      flex-shrink: 0;
-    }
-    
-    .info-value {
-      font-size: 13px;
-      color: #333;
-      font-weight: 500;
-    }
-    
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 25px;
-    }
-    
-    .meta-item {
-      background: #f8fafc;
-      border-radius: 6px;
-      padding: 10px 12px;
-      border: 1px solid #e2e8f0;
-    }
-    
-    .meta-label {
-      font-size: 11px;
-      color: #888;
-      margin-bottom: 2px;
-    }
-    
-    .meta-value {
-      font-size: 13px;
-      font-weight: 600;
-      color: #333;
-    }
-    
-    .products-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 25px;
-    }
-    
-    .products-table thead {
-      background: #1e40af;
-      color: white;
-    }
-    
-    .products-table th {
-      padding: 10px 12px;
-      text-align: left;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    
-    .products-table th:nth-child(2) {
-      text-align: right;
-      width: 100px;
-    }
-    
-    .products-table th:nth-child(3) {
-      text-align: center;
-      width: 60px;
-    }
-    
-    .products-table th:last-child {
-      text-align: right;
-      width: 100px;
-    }
-    
-    .section-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    
-    .summary-box {
-      margin-left: auto;
-      width: 280px;
-    }
-    
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-      font-size: 13px;
-    }
-    
-    .summary-row.total {
-      border-bottom: none;
-      border-top: 2px solid #1e40af;
-      margin-top: 4px;
-      padding-top: 12px;
-      font-size: 18px;
-      font-weight: 700;
-      color: #1e40af;
-    }
-    
-    .summary-label { color: #666; }
-    .summary-value { font-weight: 600; }
-    
-    .notes-box {
-      margin-top: 25px;
-      padding: 14px;
-      background: #fffbeb;
-      border-radius: 8px;
-      border: 1px solid #fde68a;
-    }
-    
-    .notes-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #92400e;
-      margin-bottom: 6px;
-    }
-    
-    .notes-content {
-      font-size: 12px;
-      color: #78350f;
-      white-space: pre-wrap;
-    }
-    
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      padding-top: 15px;
-      border-top: 1px solid #e2e8f0;
-      font-size: 11px;
-      color: #999;
-    }
-    
-    .payment-status {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    
-    .status-paid { background: #dcfce7; color: #166534; }
-    .status-partial { background: #fef3c7; color: #92400e; }
-    .status-unpaid { background: #fee2e2; color: #991b1b; }
-    
-    .gift-section { margin-top: 5px; }
-    .gift-section .section-title { color: #334155; border-bottom-color: #cbd5e1; }
-    .gift-section thead { background: #475569; }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <div class="header">
-      <div class="company-info">
-        <div class="company-logo">
-          <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663035885409/jbMQqpbKgBQzaPKM.png" alt="Logo" />
-        </div>
-        <div class="company-text">
-          <div class="company-name">奧創數碼有限公司</div>
-          <div class="company-name-en">Ultron Digital Company Limited</div>
-          <div class="company-detail">
-            電話：+852 4485 9954<br>
-            網站：https://ultrondigital.com.hk/
-          </div>
-        </div>
-      </div>
-      <div class="doc-title-box">
-        <div class="doc-title">${docTitle}</div>
-        <div class="doc-number">
-          編號：${escapeHtml(order.orderNumber)}<br>
-          日期：${formatDate(order.createdAt)}<br>
-          列印：${formatDate(new Date())}
-        </div>
-      </div>
-    </div>
-    
-    <div class="meta-grid">
-      <div class="meta-item">
-        <div class="meta-label">商鋪</div>
-        <div class="meta-value">${escapeHtml(order.shopName || 'ReadyGo HK')}</div>
-      </div>
-      <div class="meta-item">
-        <div class="meta-label">套餐</div>
-        <div class="meta-value">${escapeHtml(order.packageName)}</div>
-      </div>
-      <div class="meta-item">
-        <div class="meta-label">送貨日期</div>
-        <div class="meta-value">${formatDate(order.deliveryDate)}</div>
-      </div>
-      <div class="meta-item">
-        <div class="meta-label">付款狀態</div>
-        <div class="meta-value">
-          <span class="payment-status ${statusClass}">${paymentStatusText}</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="info-grid">
-      <div class="info-box">
-        <div class="info-box-title">顧客資料</div>
-        <div class="info-row">
-          <span class="info-label">客戶名稱</span>
-          <span class="info-value">${escapeHtml(order.customerName)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">電話</span>
-          <span class="info-value">${escapeHtml(order.customerPhone)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">電郵</span>
-          <span class="info-value">${escapeHtml(order.customerEmail || "-")}</span>
-        </div>
-      </div>
-      <div class="info-box">
-        <div class="info-box-title">送貨詳情</div>
-        <div class="info-row">
-          <span class="info-label">收件人</span>
-          <span class="info-value">${escapeHtml(order.customerName)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">電話</span>
-          <span class="info-value">${escapeHtml(order.customerPhone)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">時段</span>
-          <span class="info-value">${getTimeSlotLabel(order.deliveryTimeSlot)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">地址</span>
-          <span class="info-value">${escapeHtml(order.deliveryAddress)}</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="section-title">已購商品 (${order.products.length} 項)</div>
-    <table class="products-table">
-      <thead>
-        <tr>
-          <th>商品</th>
-          ${hasUnitPrice ? '<th style="text-align: right;">單價</th>' : ''}
-          <th style="text-align: center;">數量</th>
-          ${hasUnitPrice ? '<th style="text-align: right;">小計</th>' : ''}
-        </tr>
-      </thead>
-      <tbody>
-        ${productRows || `<tr><td colspan="${hasUnitPrice ? 4 : 2}" style="padding: 12px; text-align: center; color: #999;">無產品記錄</td></tr>`}
-      </tbody>
-    </table>
-    
-    ${order.gifts.length > 0 ? `
-    <div class="gift-section">
-      <div class="section-title">🎁 贈品 (${order.gifts.length} 項)</div>
-      <table class="products-table">
-        <thead>
-          <tr>
-            <th>贈品</th>
-            <th style="text-align: center;">數量</th>
-          </tr>
-        </thead>
-        <tbody>${giftRows}</tbody>
-      </table>
-    </div>
-    ` : ""}
-    
-    ${order.packageVariant ? `
-    <div style="margin-bottom: 15px; font-size: 13px; color: #666;">
-      套餐變體：${escapeHtml(order.packageVariant)}
-    </div>
-    ` : ""}
-    
-    <div class="summary-box">
-      <div class="summary-row">
-        <span class="summary-label">小計</span>
-        <span class="summary-value">${formatCurrency(orderAmount)}</span>
-      </div>
-      <div class="summary-row">
-        <span class="summary-label">運送費用</span>
-        <span class="summary-value">免費</span>
-      </div>
-      ${docType === "receipt" && paidAmount > 0 ? `
-      <div class="summary-row">
-        <span class="summary-label">已付金額</span>
-        <span class="summary-value" style="color: #16a34a;">${formatCurrency(paidAmount)}</span>
-      </div>
-      ${balance > 0 ? `
-      <div class="summary-row">
-        <span class="summary-label">應付餘額</span>
-        <span class="summary-value" style="color: #dc2626;">${formatCurrency(balance)}</span>
-      </div>
-      ` : ""}
-      ` : ""}
-      <div class="summary-row total">
-        <span>總計</span>
-        <span>${formatCurrency(orderAmount)}</span>
-      </div>
-    </div>
-    
-    ${order.notes ? `
-    <div class="notes-box">
-      <div class="notes-title">備註</div>
-      <div class="notes-content">${escapeHtml(order.notes)}</div>
-    </div>
-    ` : ""}
-    
-    <div class="footer">
-      奧創數碼有限公司 Ultron Digital Limited | 電話：+852 4485 9954 | https://ultrondigital.com.hk/
-    </div>
-  </div>
-</body>
-</html>`;
-}
+  const pageWidth = doc.page.width;
+  const marginLeft = 45;
+  const marginRight = 45;
+  const contentWidth = pageWidth - marginLeft - marginRight;
 
-let browserInstance: any = null;
+  // ===== HEADER =====
+  let y = 40;
 
-async function getBrowser() {
-  if (!browserInstance) {
-    browserInstance = await puppeteer.launch({
-      headless: true,
-      executablePath: "/usr/bin/chromium-browser",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--font-render-hinting=none",
-      ],
-    });
+  // Logo + Company info
+  if (logoBuffer) {
+    try {
+      doc.image(logoBuffer, marginLeft, y, { width: 48, height: 48 });
+    } catch { /* skip logo if error */ }
   }
-  return browserInstance;
-}
 
-async function htmlToPdf(html: string): Promise<Buffer> {
-  const browser = await getBrowser();
-  const page = await browser.newPage();
-  
-  try {
-    await page.setContent(html, { waitUntil: "networkidle0", timeout: 15000 });
-    
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "0", right: "0", bottom: "0", left: "0" },
-    });
-    
-    return Buffer.from(pdfBuffer);
-  } finally {
-    await page.close();
+  const textStartX = marginLeft + 58;
+  doc.fontSize(16).fillColor(BLUE).text("奧創數碼有限公司", textStartX, y + 2);
+  doc.fontSize(10).fillColor(BLUE).text("Ultron Digital Company Limited", textStartX, y + 22);
+  doc.fontSize(8).fillColor(MEDIUM_GRAY).text("電話：+852 4485 9954 | 網站：https://ultrondigital.com.hk/", textStartX, y + 36);
+
+  // Doc title on the right
+  const titleWidth = doc.widthOfString(docTitle);
+  doc.fontSize(22).fillColor(BLUE).text(docTitle, pageWidth - marginRight - 120, y, { width: 120, align: "right" });
+  doc.fontSize(9).fillColor(MEDIUM_GRAY).text(`編號：${order.orderNumber}`, pageWidth - marginRight - 150, y + 30, { width: 150, align: "right" });
+  doc.fontSize(9).text(`日期：${formatDate(order.createdAt)}`, pageWidth - marginRight - 150, y + 44, { width: 150, align: "right" });
+
+  // Blue line under header
+  y += 60;
+  doc.moveTo(marginLeft, y).lineTo(pageWidth - marginRight, y).strokeColor(LIGHT_BLUE).lineWidth(2.5).stroke();
+  y += 15;
+
+  // ===== INFO BOXES =====
+  const boxWidth = (contentWidth - 15) / 2;
+  const boxHeight = 90;
+
+  // Customer info box
+  drawRoundedRect(doc, marginLeft, y, boxWidth, boxHeight, 6);
+  doc.fillColor(BG_LIGHT).fill().strokeColor(BORDER_COLOR).lineWidth(0.8).stroke();
+
+  doc.fontSize(10).fillColor(BLUE).text("客戶資料", marginLeft + 12, y + 10);
+  doc.fontSize(9).fillColor(LIGHT_GRAY).text("姓名", marginLeft + 12, y + 30);
+  doc.fillColor(DARK_GRAY).text(order.customerName, marginLeft + 60, y + 30);
+  doc.fillColor(LIGHT_GRAY).text("電話", marginLeft + 12, y + 48);
+  doc.fillColor(DARK_GRAY).text(order.customerPhone, marginLeft + 60, y + 48);
+  doc.fillColor(LIGHT_GRAY).text("電郵", marginLeft + 12, y + 66);
+  doc.fillColor(DARK_GRAY).text(order.customerEmail || "-", marginLeft + 60, y + 66);
+
+  // Order info box
+  const rightBoxX = marginLeft + boxWidth + 15;
+  drawRoundedRect(doc, rightBoxX, y, boxWidth, boxHeight, 6);
+  doc.fillColor(BG_LIGHT).fill().strokeColor(BORDER_COLOR).lineWidth(0.8).stroke();
+
+  doc.fontSize(10).fillColor(BLUE).text("訂單資料", rightBoxX + 12, y + 10);
+  doc.fontSize(9).fillColor(LIGHT_GRAY).text("商鋪", rightBoxX + 12, y + 30);
+  doc.fillColor(DARK_GRAY).text(order.shopName || "ReadyGo HK", rightBoxX + 60, y + 30);
+  doc.fillColor(LIGHT_GRAY).text("套餐", rightBoxX + 12, y + 48);
+  doc.fillColor(DARK_GRAY).text(order.packageName, rightBoxX + 60, y + 48, { width: boxWidth - 80 });
+  if (order.packageVariant) {
+    doc.fillColor(LIGHT_GRAY).text("規格", rightBoxX + 12, y + 66);
+    doc.fillColor(DARK_GRAY).text(order.packageVariant, rightBoxX + 60, y + 66);
   }
+
+  y += boxHeight + 12;
+
+  // ===== META ROW (4 items) =====
+  const metaWidth = (contentWidth - 36) / 4;
+  const metaHeight = 42;
+  const metaItems = [
+    { label: "送貨地址", value: order.deliveryAddress.substring(0, 20) + (order.deliveryAddress.length > 20 ? "..." : "") },
+    { label: "送貨日期", value: formatDate(order.deliveryDate) },
+    { label: "送貨時段", value: getTimeSlotLabel(order.deliveryTimeSlot) },
+    { label: "付款狀態", value: order.paymentStatus === "paid" ? "已付款" : order.paymentStatus === "partial" ? "部分付款" : "未付款" },
+  ];
+
+  metaItems.forEach((item, i) => {
+    const mx = marginLeft + i * (metaWidth + 12);
+    drawRoundedRect(doc, mx, y, metaWidth, metaHeight, 4);
+    doc.fillColor(BG_LIGHT).fill().strokeColor(BORDER_COLOR).lineWidth(0.5).stroke();
+    doc.fontSize(7.5).fillColor(LIGHT_GRAY).text(item.label, mx + 8, y + 6);
+    doc.fontSize(9).fillColor(DARK_GRAY).text(item.value, mx + 8, y + 22, { width: metaWidth - 16 });
+  });
+
+  y += metaHeight + 18;
+
+  // ===== PRODUCTS TABLE =====
+  if (order.products.length > 0) {
+    doc.fontSize(11).fillColor(DARK_GRAY).text("產品明細", marginLeft, y);
+    y += 6;
+    doc.moveTo(marginLeft, y + 12).lineTo(pageWidth - marginRight, y + 12).strokeColor(BORDER_COLOR).lineWidth(1.5).stroke();
+    y += 18;
+
+    // Table header
+    const headerHeight = 28;
+    doc.rect(marginLeft, y, contentWidth, headerHeight).fillColor(BLUE).fill();
+
+    let colX = marginLeft;
+    const colProduct = hasUnitPrice ? contentWidth * 0.42 : contentWidth * 0.65;
+    const colUnitPrice = hasUnitPrice ? contentWidth * 0.18 : 0;
+    const colQty = hasUnitPrice ? contentWidth * 0.15 : contentWidth * 0.35;
+    const colSubtotal = hasUnitPrice ? contentWidth * 0.25 : 0;
+
+    doc.fontSize(9).fillColor(WHITE);
+    doc.text("產品", colX + 10, y + 8, { width: colProduct - 10 });
+    if (hasUnitPrice) {
+      doc.text("單價", colX + colProduct, y + 8, { width: colUnitPrice, align: "right" });
+    }
+    doc.text("數量", colX + colProduct + colUnitPrice, y + 8, { width: colQty, align: "center" });
+    if (hasUnitPrice) {
+      doc.text("小計", colX + colProduct + colUnitPrice + colQty, y + 8, { width: colSubtotal - 10, align: "right" });
+    }
+
+    y += headerHeight;
+
+    // Table rows
+    order.products.forEach((p, idx) => {
+      const unitPrice = Number(p.unitPrice || 0);
+      const subtotal = unitPrice * p.quantity;
+      const rowHeight = 36;
+
+      // Check if we need a new page
+      if (y + rowHeight > doc.page.height - 80) {
+        doc.addPage();
+        y = 40;
+      }
+
+      // Alternating row background
+      if (idx % 2 === 0) {
+        doc.rect(marginLeft, y, contentWidth, rowHeight).fillColor("#fafbfc").fill();
+      }
+
+      doc.fontSize(9).fillColor(DARK_GRAY).text(p.name, colX + 10, y + 6, { width: colProduct - 20 });
+      doc.fontSize(7.5).fillColor(LIGHT_GRAY).text(`SKU: ${p.sku}${p.color ? ` | ${p.color}` : ""}`, colX + 10, y + 20, { width: colProduct - 20 });
+
+      if (hasUnitPrice) {
+        doc.fontSize(9).fillColor(DARK_GRAY).text(unitPrice > 0 ? formatCurrency(unitPrice) : "-", colX + colProduct, y + 12, { width: colUnitPrice, align: "right" });
+      }
+      doc.fontSize(9).fillColor(DARK_GRAY).text(String(p.quantity), colX + colProduct + colUnitPrice, y + 12, { width: colQty, align: "center" });
+      if (hasUnitPrice) {
+        doc.fontSize(9).fillColor(DARK_GRAY).text(unitPrice > 0 ? formatCurrency(subtotal) : "-", colX + colProduct + colUnitPrice + colQty, y + 12, { width: colSubtotal - 10, align: "right" });
+      }
+
+      // Bottom border
+      doc.moveTo(marginLeft, y + rowHeight).lineTo(pageWidth - marginRight, y + rowHeight).strokeColor("#eeeeee").lineWidth(0.5).stroke();
+      y += rowHeight;
+    });
+
+    y += 10;
+  }
+
+  // ===== GIFTS TABLE =====
+  if (order.gifts.length > 0) {
+    // Check if we need a new page
+    if (y + 80 > doc.page.height - 80) {
+      doc.addPage();
+      y = 40;
+    }
+
+    doc.fontSize(11).fillColor("#334155").text("贈品", marginLeft, y);
+    y += 6;
+    doc.moveTo(marginLeft, y + 12).lineTo(pageWidth - marginRight, y + 12).strokeColor("#cbd5e1").lineWidth(1.5).stroke();
+    y += 18;
+
+    // Gift table header
+    const giftHeaderHeight = 28;
+    doc.rect(marginLeft, y, contentWidth, giftHeaderHeight).fillColor("#475569").fill();
+
+    doc.fontSize(9).fillColor(WHITE);
+    doc.text("贈品", marginLeft + 10, y + 8, { width: contentWidth * 0.65 });
+    doc.text("數量", marginLeft + contentWidth * 0.65, y + 8, { width: contentWidth * 0.35, align: "center" });
+
+    y += giftHeaderHeight;
+
+    order.gifts.forEach((g, idx) => {
+      const rowHeight = 36;
+
+      if (y + rowHeight > doc.page.height - 80) {
+        doc.addPage();
+        y = 40;
+      }
+
+      if (idx % 2 === 0) {
+        doc.rect(marginLeft, y, contentWidth, rowHeight).fillColor("#fafbfc").fill();
+      }
+
+      doc.fontSize(9).fillColor("#334155").text(`[\u8D08] ${g.name}`, marginLeft + 10, y + 6, { width: contentWidth * 0.6 });
+      doc.fontSize(7.5).fillColor(LIGHT_GRAY).text(`SKU: ${g.sku}${g.color ? ` | ${g.color}` : ""}`, marginLeft + 10, y + 20, { width: contentWidth * 0.6 });
+      doc.fontSize(9).fillColor(DARK_GRAY).text(String(g.quantity), marginLeft + contentWidth * 0.65, y + 12, { width: contentWidth * 0.35, align: "center" });
+
+      doc.moveTo(marginLeft, y + rowHeight).lineTo(pageWidth - marginRight, y + rowHeight).strokeColor("#eeeeee").lineWidth(0.5).stroke();
+      y += rowHeight;
+    });
+
+    y += 10;
+  }
+
+  // ===== SUMMARY BOX =====
+  if (y + 120 > doc.page.height - 80) {
+    doc.addPage();
+    y = 40;
+  }
+
+  const summaryWidth = 220;
+  const summaryX = pageWidth - marginRight - summaryWidth;
+
+  doc.fontSize(9).fillColor(MEDIUM_GRAY).text("訂單金額", summaryX, y);
+  doc.fillColor(DARK_GRAY).text(formatCurrency(orderAmount), summaryX + 80, y, { width: summaryWidth - 80, align: "right" });
+  y += 18;
+  doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#eeeeee").lineWidth(0.5).stroke();
+  y += 6;
+
+  if (docType === "receipt" || docType === "invoice") {
+    doc.fontSize(9).fillColor(MEDIUM_GRAY).text("已付金額", summaryX, y);
+    doc.fillColor(DARK_GRAY).text(formatCurrency(paidAmount), summaryX + 80, y, { width: summaryWidth - 80, align: "right" });
+    y += 18;
+    doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#eeeeee").lineWidth(0.5).stroke();
+    y += 6;
+
+    if (balance > 0) {
+      doc.fontSize(9).fillColor(MEDIUM_GRAY).text("應付餘額", summaryX, y);
+      doc.fillColor("#dc2626").text(formatCurrency(balance), summaryX + 80, y, { width: summaryWidth - 80, align: "right" });
+      y += 18;
+      doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#eeeeee").lineWidth(0.5).stroke();
+      y += 6;
+    }
+  }
+
+  // Total line
+  doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor(BLUE).lineWidth(2).stroke();
+  y += 8;
+  doc.fontSize(14).fillColor(BLUE).text("總計", summaryX, y);
+  doc.text(formatCurrency(orderAmount), summaryX + 60, y, { width: summaryWidth - 60, align: "right" });
+  y += 28;
+
+  // ===== NOTES =====
+  if (order.notes) {
+    if (y + 60 > doc.page.height - 60) {
+      doc.addPage();
+      y = 40;
+    }
+
+    drawRoundedRect(doc, marginLeft, y, contentWidth, 50, 6);
+    doc.fillColor("#fffbeb").fill().strokeColor("#fde68a").lineWidth(0.8).stroke();
+
+    doc.fontSize(9).fillColor("#92400e").text("備註", marginLeft + 12, y + 10);
+    doc.fontSize(8.5).fillColor("#78350f").text(order.notes, marginLeft + 12, y + 26, { width: contentWidth - 24 });
+    y += 55;
+  }
+
+  // ===== FOOTER =====
+  // Ensure footer is on the last page at the bottom
+  const footerY = doc.page.height - 35;
+  doc.fontSize(7.5).fillColor("#999999").text(
+    "奧創數碼有限公司 Ultron Digital Limited | 電話：+852 4485 9954 | https://ultrondigital.com.hk/",
+    marginLeft, footerY, { width: contentWidth, align: "center" }
+  );
+
+  doc.end();
+
+  return new Promise((resolve, reject) => {
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+  });
 }
 
 export async function generateQuotationPdf(order: OrderForPdf): Promise<Buffer> {
-  const html = buildHtml(order, "quotation", "報價單");
-  return htmlToPdf(html);
+  return buildPdf(order, "quotation", "報價單");
 }
 
 export async function generateInvoicePdf(order: OrderForPdf): Promise<Buffer> {
-  const html = buildHtml(order, "invoice", "發票");
-  return htmlToPdf(html);
+  return buildPdf(order, "invoice", "發票");
 }
 
 export async function generateReceiptPdf(order: OrderForPdf): Promise<Buffer> {
-  const html = buildHtml(order, "receipt", "收據");
-  return htmlToPdf(html);
+  return buildPdf(order, "receipt", "收據");
 }
