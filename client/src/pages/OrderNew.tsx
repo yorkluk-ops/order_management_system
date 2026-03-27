@@ -106,17 +106,17 @@ export default function OrderNew() {
   // Generate package name string
   const packageNameString = useMemo(() => {
     if (selectedPackages.length === 0) {
-      if (customAmount > 0 || productsSubtotal > 0) return "其他｜單件產品購買";
+      if (customAmount > 0 || productsSubtotal > 0 || selectedProducts.length > 0) return "其他｜單件產品購買";
       return "";
     }
     const names = selectedPackages.map(pkg => 
       pkg.quantity > 1 ? `${pkg.name} x${pkg.quantity}` : pkg.name
     );
-    if (customAmount > 0) {
+    if (customAmount > 0 || selectedProducts.length > 0) {
       names.push("其他");
     }
     return names.join(" + ");
-  }, [selectedPackages, customAmount]);
+  }, [selectedPackages, customAmount, productsSubtotal, selectedProducts]);
 
   const createMutation = trpc.orders.create.useMutation({
     onSuccess: (result) => {
