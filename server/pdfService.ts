@@ -168,13 +168,19 @@ async function buildPdf(order: OrderForPdf, docType: string, docTitle: string): 
   doc.fontSize(28).fillColor(BLACK).text(docTitle, mL, y);
   y += 40;
 
-  // ===== LOGO =====
+  // ===== LOGO + COMPANY INFO =====
   if (logoBuffer) {
     try {
-      doc.image(logoBuffer, mL, y, { width: 60, height: 60 });
+      doc.image(logoBuffer, mL, y, { width: 55, height: 55 });
     } catch { /* skip */ }
   }
-  y += 70;
+  // Company info next to logo
+  const companyInfoX = mL + 70;
+  doc.fontSize(10).fillColor(BLACK).text("奧創數碼有限公司", companyInfoX, y + 2);
+  doc.fontSize(8).fillColor(DARK_TEXT).text("ULTRON DIGITAL COMPANY LIMITED", companyInfoX, y + 16);
+  doc.fontSize(8).fillColor(MEDIUM).text("地址：觀塘海濱道177號海裕工業中心7樓B1A", companyInfoX, y + 30);
+  doc.fontSize(8).fillColor(MEDIUM).text("電話：+852 4485 9954", companyInfoX, y + 42);
+  y += 65;
 
   // ===== ORDER META INFO =====
   const labelX = mL;
