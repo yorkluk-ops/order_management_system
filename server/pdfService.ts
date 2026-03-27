@@ -47,11 +47,19 @@ export interface OrderForPdf {
 function formatDate(date: Date | string | null): string {
   if (!date) return "-";
   const d = new Date(date);
-  return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getDate().toString().padStart(2, "0")}`;
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
+}
+
+function formatDateTime(date: Date | string | null): string {
+  if (!date) return "-";
+  const d = new Date(date);
+  const dateStr = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
+  const timeStr = `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  return `${dateStr} ${timeStr} HKT`;
 }
 
 function formatCurrency(value: number): string {
-  return `HK$${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `HKD ${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function getTimeSlotLabel(slot: string | null): string {
@@ -64,15 +72,19 @@ function getTimeSlotLabel(slot: string | null): string {
   return slots[slot] || slot;
 }
 
+function getPaymentStatusLabel(status: string): string {
+  if (status === "paid") return "已付款";
+  if (status === "partial") return "部分付款";
+  return "未付款";
+}
+
 async function downloadFile(url: string, destPath: string): Promise<void> {
   if (fs.existsSync(destPath) && fs.statSync(destPath).size > 0) {
-    return; // Already cached
+    return;
   }
-  
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https") ? https : http;
     const request = protocol.get(url, (response) => {
-      // Handle redirects
       if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
         downloadFile(response.headers.location, destPath).then(resolve).catch(reject);
         return;
@@ -100,12 +112,10 @@ const LOGO_PNG_CACHE_PATH = path.join("/tmp", "company_logo_converted.png");
 
 async function ensureLogo(): Promise<Buffer | null> {
   try {
-    // Check if already converted
     if (fs.existsSync(LOGO_PNG_CACHE_PATH) && fs.statSync(LOGO_PNG_CACHE_PATH).size > 0) {
       return fs.readFileSync(LOGO_PNG_CACHE_PATH);
     }
     await downloadFile(LOGO_CDN_URL, LOGO_CACHE_PATH);
-    // Convert to PNG (the file might be WebP despite .png extension)
     const pngBuffer = await sharp(LOGO_CACHE_PATH).png().toBuffer();
     fs.writeFileSync(LOGO_PNG_CACHE_PATH, pngBuffer);
     return pngBuffer;
@@ -115,27 +125,16 @@ async function ensureLogo(): Promise<Buffer | null> {
   }
 }
 
-// Colors
-const BLUE = "#1e40af";
-const LIGHT_BLUE = "#2563eb";
-const DARK_GRAY = "#333333";
-const MEDIUM_GRAY = "#666666";
-const LIGHT_GRAY = "#888888";
-const BORDER_COLOR = "#e2e8f0";
-const BG_LIGHT = "#f8fafc";
+// Black-themed color palette
+const BLACK = "#000000";
+const DARK = "#1a1a1a";
+const DARK_TEXT = "#222222";
+const MEDIUM = "#555555";
+const LIGHT_TEXT = "#777777";
+const BORDER = "#cccccc";
+const LIGHT_BORDER = "#e5e5e5";
+const TABLE_HEADER_BG = "#f5f5f5";
 const WHITE = "#ffffff";
-
-function drawRoundedRect(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number, r: number) {
-  doc.moveTo(x + r, y)
-    .lineTo(x + w - r, y)
-    .quadraticCurveTo(x + w, y, x + w, y + r)
-    .lineTo(x + w, y + h - r)
-    .quadraticCurveTo(x + w, y + h, x + w - r, y + h)
-    .lineTo(x + r, y + h)
-    .quadraticCurveTo(x, y + h, x, y + h - r)
-    .lineTo(x, y + r)
-    .quadraticCurveTo(x, y, x + r, y);
-}
 
 async function buildPdf(order: OrderForPdf, docType: string, docTitle: string): Promise<Buffer> {
   const fontPath = await ensureFont();
@@ -145,14 +144,14 @@ async function buildPdf(order: OrderForPdf, docType: string, docTitle: string): 
   const paidAmount = Number(order.paidAmount || 0);
   const balance = orderAmount - paidAmount;
   const hasUnitPrice = order.products.some(p => (p.unitPrice || 0) > 0);
+  const totalProducts = order.products.reduce((sum, p) => sum + p.quantity, 0);
 
   const doc = new PDFDocument({
     size: "A4",
-    margins: { top: 40, bottom: 40, left: 45, right: 45 },
+    margins: { top: 40, bottom: 40, left: 50, right: 50 },
     bufferPages: true,
   });
 
-  // Register font
   doc.registerFont("NotoSansTC", fontPath);
   doc.font("NotoSansTC");
 
@@ -160,260 +159,288 @@ async function buildPdf(order: OrderForPdf, docType: string, docTitle: string): 
   doc.on("data", (chunk: Buffer) => chunks.push(chunk));
 
   const pageWidth = doc.page.width;
-  const marginLeft = 45;
-  const marginRight = 45;
-  const contentWidth = pageWidth - marginLeft - marginRight;
+  const mL = 50;
+  const mR = 50;
+  const cW = pageWidth - mL - mR;
 
-  // ===== HEADER =====
+  // ===== TITLE =====
   let y = 40;
+  doc.fontSize(28).fillColor(BLACK).text(docTitle, mL, y);
+  y += 40;
 
-  // Logo + Company info
+  // ===== LOGO =====
   if (logoBuffer) {
     try {
-      doc.image(logoBuffer, marginLeft, y, { width: 48, height: 48 });
-    } catch { /* skip logo if error */ }
+      doc.image(logoBuffer, mL, y, { width: 60, height: 60 });
+    } catch { /* skip */ }
   }
+  y += 70;
 
-  const textStartX = marginLeft + 58;
-  doc.fontSize(16).fillColor(BLUE).text("奧創數碼有限公司", textStartX, y + 2);
-  doc.fontSize(10).fillColor(BLUE).text("Ultron Digital Company Limited", textStartX, y + 22);
-  doc.fontSize(8).fillColor(MEDIUM_GRAY).text("電話：+852 4485 9954 | 網站：https://ultrondigital.com.hk/", textStartX, y + 36);
+  // ===== ORDER META INFO =====
+  const labelX = mL;
+  const valueX = mL + 70;
+  const metaFontSize = 9.5;
+  const metaLineHeight = 16;
 
-  // Doc title on the right
-  const titleWidth = doc.widthOfString(docTitle);
-  doc.fontSize(22).fillColor(BLUE).text(docTitle, pageWidth - marginRight - 120, y, { width: 120, align: "right" });
-  doc.fontSize(9).fillColor(MEDIUM_GRAY).text(`編號：${order.orderNumber}`, pageWidth - marginRight - 150, y + 30, { width: 150, align: "right" });
-  doc.fontSize(9).text(`日期：${formatDate(order.createdAt)}`, pageWidth - marginRight - 150, y + 44, { width: 150, align: "right" });
-
-  // Blue line under header
-  y += 60;
-  doc.moveTo(marginLeft, y).lineTo(pageWidth - marginRight, y).strokeColor(LIGHT_BLUE).lineWidth(2.5).stroke();
-  y += 15;
-
-  // ===== INFO BOXES =====
-  const boxWidth = (contentWidth - 15) / 2;
-  const boxHeight = 90;
-
-  // Customer info box
-  drawRoundedRect(doc, marginLeft, y, boxWidth, boxHeight, 6);
-  doc.fillColor(BG_LIGHT).fill().strokeColor(BORDER_COLOR).lineWidth(0.8).stroke();
-
-  doc.fontSize(10).fillColor(BLUE).text("客戶資料", marginLeft + 12, y + 10);
-  doc.fontSize(9).fillColor(LIGHT_GRAY).text("姓名", marginLeft + 12, y + 30);
-  doc.fillColor(DARK_GRAY).text(order.customerName, marginLeft + 60, y + 30);
-  doc.fillColor(LIGHT_GRAY).text("電話", marginLeft + 12, y + 48);
-  doc.fillColor(DARK_GRAY).text(order.customerPhone, marginLeft + 60, y + 48);
-  doc.fillColor(LIGHT_GRAY).text("電郵", marginLeft + 12, y + 66);
-  doc.fillColor(DARK_GRAY).text(order.customerEmail || "-", marginLeft + 60, y + 66);
-
-  // Order info box
-  const rightBoxX = marginLeft + boxWidth + 15;
-  drawRoundedRect(doc, rightBoxX, y, boxWidth, boxHeight, 6);
-  doc.fillColor(BG_LIGHT).fill().strokeColor(BORDER_COLOR).lineWidth(0.8).stroke();
-
-  doc.fontSize(10).fillColor(BLUE).text("訂單資料", rightBoxX + 12, y + 10);
-  doc.fontSize(9).fillColor(LIGHT_GRAY).text("商鋪", rightBoxX + 12, y + 30);
-  doc.fillColor(DARK_GRAY).text(order.shopName || "ReadyGo HK", rightBoxX + 60, y + 30);
-  doc.fillColor(LIGHT_GRAY).text("套餐", rightBoxX + 12, y + 48);
-  doc.fillColor(DARK_GRAY).text(order.packageName, rightBoxX + 60, y + 48, { width: boxWidth - 80 });
-  if (order.packageVariant) {
-    doc.fillColor(LIGHT_GRAY).text("規格", rightBoxX + 12, y + 66);
-    doc.fillColor(DARK_GRAY).text(order.packageVariant, rightBoxX + 60, y + 66);
-  }
-
-  y += boxHeight + 12;
-
-  // ===== META ROW (4 items) =====
-  const metaWidth = (contentWidth - 36) / 4;
-  const metaHeight = 42;
-  const metaItems = [
-    { label: "送貨地址", value: order.deliveryAddress.substring(0, 20) + (order.deliveryAddress.length > 20 ? "..." : "") },
-    { label: "送貨日期", value: formatDate(order.deliveryDate) },
-    { label: "送貨時段", value: getTimeSlotLabel(order.deliveryTimeSlot) },
-    { label: "付款狀態", value: order.paymentStatus === "paid" ? "已付款" : order.paymentStatus === "partial" ? "部分付款" : "未付款" },
+  const metaFields = [
+    { label: "商鋪名稱", value: order.shopName || "ReadyGo HK" },
+    { label: docType === "quotation" ? "報價編號" : docType === "invoice" ? "發票編號" : "收據編號", value: order.orderNumber },
+    { label: "下單日期", value: formatDateTime(order.createdAt) },
+    { label: "列印日期", value: formatDateTime(new Date()) },
+    { label: "送貨方式", value: "本地送貨" },
+    { label: "付款狀態", value: getPaymentStatusLabel(order.paymentStatus) },
   ];
 
-  metaItems.forEach((item, i) => {
-    const mx = marginLeft + i * (metaWidth + 12);
-    drawRoundedRect(doc, mx, y, metaWidth, metaHeight, 4);
-    doc.fillColor(BG_LIGHT).fill().strokeColor(BORDER_COLOR).lineWidth(0.5).stroke();
-    doc.fontSize(7.5).fillColor(LIGHT_GRAY).text(item.label, mx + 8, y + 6);
-    doc.fontSize(9).fillColor(DARK_GRAY).text(item.value, mx + 8, y + 22, { width: metaWidth - 16 });
+  metaFields.forEach((field) => {
+    doc.fontSize(metaFontSize).fillColor(BLACK).text(field.label, labelX, y, { continued: false });
+    doc.fontSize(metaFontSize).fillColor(DARK_TEXT).text(field.value, valueX, y);
+    y += metaLineHeight;
   });
 
-  y += metaHeight + 18;
+  y += 10;
 
-  // ===== PRODUCTS TABLE =====
-  if (order.products.length > 0) {
-    doc.fontSize(11).fillColor(DARK_GRAY).text("產品明細", marginLeft, y);
-    y += 6;
-    doc.moveTo(marginLeft, y + 12).lineTo(pageWidth - marginRight, y + 12).strokeColor(BORDER_COLOR).lineWidth(1.5).stroke();
-    y += 18;
+  // ===== CUSTOMER & DELIVERY INFO (side by side) =====
+  // Thin separator line
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+  y += 12;
 
-    // Table header
-    const headerHeight = 28;
-    doc.rect(marginLeft, y, contentWidth, headerHeight).fillColor(BLUE).fill();
+  const halfW = cW / 2;
 
-    let colX = marginLeft;
-    const colProduct = hasUnitPrice ? contentWidth * 0.42 : contentWidth * 0.65;
-    const colUnitPrice = hasUnitPrice ? contentWidth * 0.18 : 0;
-    const colQty = hasUnitPrice ? contentWidth * 0.15 : contentWidth * 0.35;
-    const colSubtotal = hasUnitPrice ? contentWidth * 0.25 : 0;
-
-    doc.fontSize(9).fillColor(WHITE);
-    doc.text("產品", colX + 10, y + 8, { width: colProduct - 10 });
-    if (hasUnitPrice) {
-      doc.text("單價", colX + colProduct, y + 8, { width: colUnitPrice, align: "right" });
-    }
-    doc.text("數量", colX + colProduct + colUnitPrice, y + 8, { width: colQty, align: "center" });
-    if (hasUnitPrice) {
-      doc.text("小計", colX + colProduct + colUnitPrice + colQty, y + 8, { width: colSubtotal - 10, align: "right" });
-    }
-
-    y += headerHeight;
-
-    // Table rows
-    order.products.forEach((p, idx) => {
-      const unitPrice = Number(p.unitPrice || 0);
-      const subtotal = unitPrice * p.quantity;
-      const rowHeight = 36;
-
-      // Check if we need a new page
-      if (y + rowHeight > doc.page.height - 80) {
-        doc.addPage();
-        y = 40;
-      }
-
-      // Alternating row background
-      if (idx % 2 === 0) {
-        doc.rect(marginLeft, y, contentWidth, rowHeight).fillColor("#fafbfc").fill();
-      }
-
-      doc.fontSize(9).fillColor(DARK_GRAY).text(p.name, colX + 10, y + 6, { width: colProduct - 20 });
-      doc.fontSize(7.5).fillColor(LIGHT_GRAY).text(`SKU: ${p.sku}${p.color ? ` | ${p.color}` : ""}`, colX + 10, y + 20, { width: colProduct - 20 });
-
-      if (hasUnitPrice) {
-        doc.fontSize(9).fillColor(DARK_GRAY).text(unitPrice > 0 ? formatCurrency(unitPrice) : "-", colX + colProduct, y + 12, { width: colUnitPrice, align: "right" });
-      }
-      doc.fontSize(9).fillColor(DARK_GRAY).text(String(p.quantity), colX + colProduct + colUnitPrice, y + 12, { width: colQty, align: "center" });
-      if (hasUnitPrice) {
-        doc.fontSize(9).fillColor(DARK_GRAY).text(unitPrice > 0 ? formatCurrency(subtotal) : "-", colX + colProduct + colUnitPrice + colQty, y + 12, { width: colSubtotal - 10, align: "right" });
-      }
-
-      // Bottom border
-      doc.moveTo(marginLeft, y + rowHeight).lineTo(pageWidth - marginRight, y + rowHeight).strokeColor("#eeeeee").lineWidth(0.5).stroke();
-      y += rowHeight;
-    });
-
-    y += 10;
+  // Left: Customer info
+  doc.fontSize(10).fillColor(BLACK).text("顧客資料", mL, y);
+  y += 16;
+  doc.fontSize(9.5).fillColor(DARK_TEXT).text(order.customerName, mL, y);
+  y += 14;
+  doc.text(`+852${order.customerPhone}`, mL, y);
+  y += 14;
+  if (order.customerEmail) {
+    doc.text(order.customerEmail, mL, y);
+    y += 14;
   }
 
-  // ===== GIFTS TABLE =====
-  if (order.gifts.length > 0) {
-    // Check if we need a new page
-    if (y + 80 > doc.page.height - 80) {
+  // Right: Delivery info (positioned at same starting y as customer)
+  const deliveryStartY = y - (order.customerEmail ? 44 : 30) - 16;
+  const rightX = mL + halfW + 20;
+  doc.fontSize(10).fillColor(BLACK).text("送貨詳情", rightX, deliveryStartY);
+  let ry = deliveryStartY + 16;
+  doc.fontSize(9.5).fillColor(DARK_TEXT).text(order.customerName, rightX, ry);
+  ry += 14;
+  doc.text(`+852${order.customerPhone}`, rightX, ry);
+  ry += 14;
+  doc.text("本地送貨", rightX, ry);
+  ry += 14;
+
+  // Delivery address (may be multi-line)
+  const addressLines = order.deliveryAddress.split("\n");
+  addressLines.forEach((line) => {
+    doc.text(line.trim(), rightX, ry, { width: halfW - 20 });
+    ry += 14;
+  });
+
+  // Use the larger y value
+  y = Math.max(y, ry) + 16;
+
+  // ===== PRODUCTS TABLE =====
+  // Separator
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(BORDER).lineWidth(0.5).stroke();
+  y += 2;
+
+  // Table header background
+  const headerH = 26;
+  doc.rect(mL, y, cW, headerH).fillColor(TABLE_HEADER_BG).fill();
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(BORDER).lineWidth(0.5).stroke();
+  doc.moveTo(mL, y + headerH).lineTo(pageWidth - mR, y + headerH).strokeColor(BORDER).lineWidth(0.5).stroke();
+
+  // Column widths
+  const colProduct = hasUnitPrice ? cW * 0.44 : cW * 0.60;
+  const colUnitPrice = hasUnitPrice ? cW * 0.16 : 0;
+  const colQty = cW * 0.16;
+  const colTotal = hasUnitPrice ? cW * 0.24 : cW * 0.24;
+
+  // Header text
+  doc.fontSize(9).fillColor(BLACK);
+  doc.text(`已購商品 (x${totalProducts})`, mL + 8, y + 7, { width: colProduct - 8 });
+  if (hasUnitPrice) {
+    doc.text("單價", mL + colProduct, y + 7, { width: colUnitPrice, align: "right" });
+  }
+  doc.text(`數量 (x${totalProducts})`, mL + colProduct + colUnitPrice, y + 7, { width: colQty, align: "right" });
+  doc.text("總數", mL + colProduct + colUnitPrice + colQty, y + 7, { width: colTotal - 8, align: "right" });
+
+  y += headerH;
+
+  // Product rows
+  order.products.forEach((p) => {
+    const unitPrice = Number(p.unitPrice || 0);
+    const subtotal = unitPrice > 0 ? unitPrice * p.quantity : 0;
+    const rowH = 48;
+
+    // Page break check
+    if (y + rowH > doc.page.height - 100) {
       doc.addPage();
       y = 40;
     }
 
-    doc.fontSize(11).fillColor("#334155").text("贈品", marginLeft, y);
-    y += 6;
-    doc.moveTo(marginLeft, y + 12).lineTo(pageWidth - marginRight, y + 12).strokeColor("#cbd5e1").lineWidth(1.5).stroke();
-    y += 18;
+    // Product name (bold-like, larger)
+    doc.fontSize(9.5).fillColor(BLACK).text(p.name + (p.color ? ` ${p.color}` : ""), mL + 8, y + 10, { width: colProduct - 16 });
+    doc.fontSize(8).fillColor(LIGHT_TEXT).text(`SKU: ${p.sku}`, mL + 8, y + 26, { width: colProduct - 16 });
 
-    // Gift table header
-    const giftHeaderHeight = 28;
-    doc.rect(marginLeft, y, contentWidth, giftHeaderHeight).fillColor("#475569").fill();
+    if (hasUnitPrice) {
+      doc.fontSize(9).fillColor(DARK_TEXT).text(
+        unitPrice > 0 ? formatCurrency(unitPrice) : "-",
+        mL + colProduct, y + 16, { width: colUnitPrice, align: "right" }
+      );
+    }
 
-    doc.fontSize(9).fillColor(WHITE);
-    doc.text("贈品", marginLeft + 10, y + 8, { width: contentWidth * 0.65 });
-    doc.text("數量", marginLeft + contentWidth * 0.65, y + 8, { width: contentWidth * 0.35, align: "center" });
+    doc.fontSize(9).fillColor(DARK_TEXT).text(
+      `x${p.quantity}`,
+      mL + colProduct + colUnitPrice, y + 16, { width: colQty, align: "right" }
+    );
 
-    y += giftHeaderHeight;
+    doc.fontSize(9).fillColor(BLACK).text(
+      hasUnitPrice && subtotal > 0 ? formatCurrency(subtotal) : formatCurrency(unitPrice > 0 ? subtotal : 0),
+      mL + colProduct + colUnitPrice + colQty, y + 16, { width: colTotal - 8, align: "right" }
+    );
 
-    order.gifts.forEach((g, idx) => {
-      const rowHeight = 36;
+    // Row separator
+    y += rowH;
+    doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+  });
 
-      if (y + rowHeight > doc.page.height - 80) {
+  y += 4;
+
+  // ===== GIFTS TABLE =====
+  if (order.gifts.length > 0) {
+    if (y + 60 > doc.page.height - 100) {
+      doc.addPage();
+      y = 40;
+    }
+
+    y += 8;
+    // Gift header
+    const giftHeaderH = 26;
+    doc.rect(mL, y, cW, giftHeaderH).fillColor(TABLE_HEADER_BG).fill();
+    doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(BORDER).lineWidth(0.5).stroke();
+    doc.moveTo(mL, y + giftHeaderH).lineTo(pageWidth - mR, y + giftHeaderH).strokeColor(BORDER).lineWidth(0.5).stroke();
+
+    const totalGifts = order.gifts.reduce((sum, g) => sum + g.quantity, 0);
+    doc.fontSize(9).fillColor(BLACK);
+    doc.text(`贈品 (x${totalGifts})`, mL + 8, y + 7, { width: cW * 0.6 });
+    doc.text(`數量 (x${totalGifts})`, mL + cW * 0.6, y + 7, { width: cW * 0.4 - 8, align: "right" });
+
+    y += giftHeaderH;
+
+    order.gifts.forEach((g) => {
+      const rowH = 48;
+      if (y + rowH > doc.page.height - 100) {
         doc.addPage();
         y = 40;
       }
 
-      if (idx % 2 === 0) {
-        doc.rect(marginLeft, y, contentWidth, rowHeight).fillColor("#fafbfc").fill();
-      }
+      doc.fontSize(9.5).fillColor(BLACK).text(g.name + (g.color ? ` ${g.color}` : ""), mL + 8, y + 10, { width: cW * 0.55 });
+      doc.fontSize(8).fillColor(LIGHT_TEXT).text(`SKU: ${g.sku}`, mL + 8, y + 26, { width: cW * 0.55 });
+      doc.fontSize(9).fillColor(DARK_TEXT).text(`x${g.quantity}`, mL + cW * 0.6, y + 16, { width: cW * 0.4 - 8, align: "right" });
 
-      doc.fontSize(9).fillColor("#334155").text(`[\u8D08] ${g.name}`, marginLeft + 10, y + 6, { width: contentWidth * 0.6 });
-      doc.fontSize(7.5).fillColor(LIGHT_GRAY).text(`SKU: ${g.sku}${g.color ? ` | ${g.color}` : ""}`, marginLeft + 10, y + 20, { width: contentWidth * 0.6 });
-      doc.fontSize(9).fillColor(DARK_GRAY).text(String(g.quantity), marginLeft + contentWidth * 0.65, y + 12, { width: contentWidth * 0.35, align: "center" });
-
-      doc.moveTo(marginLeft, y + rowHeight).lineTo(pageWidth - marginRight, y + rowHeight).strokeColor("#eeeeee").lineWidth(0.5).stroke();
-      y += rowHeight;
+      y += rowH;
+      doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
     });
 
-    y += 10;
+    y += 4;
   }
 
-  // ===== SUMMARY BOX =====
+  // ===== SUMMARY TABLE =====
   if (y + 120 > doc.page.height - 80) {
     doc.addPage();
     y = 40;
   }
 
-  const summaryWidth = 220;
-  const summaryX = pageWidth - marginRight - summaryWidth;
+  y += 10;
 
-  doc.fontSize(9).fillColor(MEDIUM_GRAY).text("訂單金額", summaryX, y);
-  doc.fillColor(DARK_GRAY).text(formatCurrency(orderAmount), summaryX + 80, y, { width: summaryWidth - 80, align: "right" });
-  y += 18;
-  doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#eeeeee").lineWidth(0.5).stroke();
+  // Summary rows (right-aligned table)
+  const summaryLabelX = mL + cW * 0.55;
+  const summaryValueX = mL + cW * 0.75;
+  const summaryValueW = cW * 0.25 - 8;
+  const summaryRowH = 24;
+
+  // Top border for summary
+  doc.moveTo(summaryLabelX, y).lineTo(pageWidth - mR, y).strokeColor(BORDER).lineWidth(0.5).stroke();
+
+  // Subtotal
   y += 6;
+  doc.fontSize(9).fillColor(DARK_TEXT).text("小計", summaryLabelX, y, { width: cW * 0.2, align: "right" });
+  doc.fontSize(9).fillColor(BLACK).text(formatCurrency(orderAmount), summaryValueX, y, { width: summaryValueW, align: "right" });
+  y += summaryRowH;
+
+  // Shipping
+  doc.fontSize(9).fillColor(DARK_TEXT).text("運送費用", summaryLabelX, y, { width: cW * 0.2, align: "right" });
+  doc.fontSize(9).fillColor(BLACK).text("+HKD 0.00", summaryValueX, y, { width: summaryValueW, align: "right" });
+  y += summaryRowH;
+
+  // Discount
+  doc.fontSize(9).fillColor(DARK_TEXT).text("折扣優惠", summaryLabelX, y, { width: cW * 0.2, align: "right" });
+  doc.fontSize(9).fillColor(BLACK).text("-HKD 0.00", summaryValueX, y, { width: summaryValueW, align: "right" });
+  y += summaryRowH;
 
   if (docType === "receipt" || docType === "invoice") {
-    doc.fontSize(9).fillColor(MEDIUM_GRAY).text("已付金額", summaryX, y);
-    doc.fillColor(DARK_GRAY).text(formatCurrency(paidAmount), summaryX + 80, y, { width: summaryWidth - 80, align: "right" });
-    y += 18;
-    doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#eeeeee").lineWidth(0.5).stroke();
-    y += 6;
+    // Paid amount
+    doc.fontSize(9).fillColor(DARK_TEXT).text("已付金額", summaryLabelX, y, { width: cW * 0.2, align: "right" });
+    doc.fontSize(9).fillColor(BLACK).text(formatCurrency(paidAmount), summaryValueX, y, { width: summaryValueW, align: "right" });
+    y += summaryRowH;
 
     if (balance > 0) {
-      doc.fontSize(9).fillColor(MEDIUM_GRAY).text("應付餘額", summaryX, y);
-      doc.fillColor("#dc2626").text(formatCurrency(balance), summaryX + 80, y, { width: summaryWidth - 80, align: "right" });
-      y += 18;
-      doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#eeeeee").lineWidth(0.5).stroke();
-      y += 6;
+      doc.fontSize(9).fillColor(DARK_TEXT).text("應付餘額", summaryLabelX, y, { width: cW * 0.2, align: "right" });
+      doc.fontSize(9).fillColor("#cc0000").text(formatCurrency(balance), summaryValueX, y, { width: summaryValueW, align: "right" });
+      y += summaryRowH;
     }
   }
 
-  // Total line
-  doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor(BLUE).lineWidth(2).stroke();
+  // Total line with top border
+  doc.moveTo(summaryLabelX, y).lineTo(pageWidth - mR, y).strokeColor(BLACK).lineWidth(1).stroke();
   y += 8;
-  doc.fontSize(14).fillColor(BLUE).text("總計", summaryX, y);
-  doc.text(formatCurrency(orderAmount), summaryX + 60, y, { width: summaryWidth - 60, align: "right" });
-  y += 28;
+  doc.fontSize(10).fillColor(BLACK).text("總數", summaryLabelX, y, { width: cW * 0.2, align: "right" });
+  doc.fontSize(11).fillColor(BLACK).text(formatCurrency(orderAmount), summaryValueX, y, { width: summaryValueW, align: "right" });
+  y += 30;
 
-  // ===== NOTES =====
-  if (order.notes) {
-    if (y + 60 > doc.page.height - 60) {
+  // ===== DELIVERY INFO (below summary) =====
+  if (order.deliveryDate || order.deliveryTimeSlot) {
+    if (y + 40 > doc.page.height - 60) {
       doc.addPage();
       y = 40;
     }
+    doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+    y += 10;
+    doc.fontSize(9).fillColor(LIGHT_TEXT).text("送貨日期", mL, y);
+    doc.fillColor(DARK_TEXT).text(formatDate(order.deliveryDate), mL + 60, y);
+    if (order.deliveryTimeSlot) {
+      doc.fillColor(LIGHT_TEXT).text("送貨時段", mL + 200, y);
+      doc.fillColor(DARK_TEXT).text(getTimeSlotLabel(order.deliveryTimeSlot), mL + 260, y);
+    }
+    y += 20;
+  }
 
-    drawRoundedRect(doc, marginLeft, y, contentWidth, 50, 6);
-    doc.fillColor("#fffbeb").fill().strokeColor("#fde68a").lineWidth(0.8).stroke();
-
-    doc.fontSize(9).fillColor("#92400e").text("備註", marginLeft + 12, y + 10);
-    doc.fontSize(8.5).fillColor("#78350f").text(order.notes, marginLeft + 12, y + 26, { width: contentWidth - 24 });
-    y += 55;
+  // ===== NOTES =====
+  if (order.notes) {
+    if (y + 40 > doc.page.height - 60) {
+      doc.addPage();
+      y = 40;
+    }
+    doc.fontSize(9).fillColor(LIGHT_TEXT).text("備註", mL, y);
+    y += 14;
+    doc.fontSize(9).fillColor(DARK_TEXT).text(order.notes, mL, y, { width: cW });
+    y += 20;
   }
 
   // ===== FOOTER =====
-  // Ensure footer is on the last page at the bottom
-  const footerY = doc.page.height - 35;
-  doc.fontSize(7.5).fillColor("#999999").text(
-    "奧創數碼有限公司 Ultron Digital Limited | 電話：+852 4485 9954 | https://ultrondigital.com.hk/",
-    marginLeft, footerY, { width: contentWidth, align: "center" }
-  );
+  // Place footer after content with enough spacing
+  if (y + 60 > doc.page.height - 40) {
+    doc.addPage();
+    y = 40;
+  }
+  y = Math.max(y + 20, doc.page.height - 80);
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+  y += 10;
+  doc.fontSize(9).fillColor(BLACK).text("奧創數碼有限公司 Ultron Digital Limited", mL, y, { width: cW, align: "center" });
+  y += 14;
+  doc.fontSize(8.5).fillColor(MEDIUM).text("+852 4485 9954  |  https://ultrondigital.com.hk/", mL, y, { width: cW, align: "center" });
 
   doc.end();
 
