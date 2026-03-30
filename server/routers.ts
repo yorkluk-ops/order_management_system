@@ -57,6 +57,31 @@ import {
   createShop,
   updateShop,
   deleteShop,
+  // 庫存管理
+  getShopInventory,
+  getShopInventoryByProduct,
+  getShopInventoryItem,
+  upsertShopInventory,
+  adjustShopInventory,
+  getAllShopInventory,
+  createInventoryLog,
+  getInventoryLogs,
+  // 採購訂單
+  createPurchaseOrder,
+  getPurchaseOrderById,
+  getPurchaseOrders,
+  updatePurchaseOrder,
+  deletePurchaseOrder,
+  addPurchaseOrderItems,
+  getPurchaseOrderItems,
+  deletePurchaseOrderItems,
+  // 庫存調撥
+  createStockTransfer,
+  getStockTransferById,
+  getStockTransfers,
+  updateStockTransfer,
+  addStockTransferItems,
+  getStockTransferItems,
 } from "./db";
 import { ORDER_STATUS } from "../shared/packages";
 import { notifyOwner } from "./_core/notification";
@@ -262,12 +287,52 @@ export const appRouter = router({
           for (const product of allProducts) {
             await updateProductStockBySku(product.sku, -product.quantity);
           }
+
+          // 同時扣除商鋪庫存（根據訂單的商鋪名稱找對應商鋪）
+          const orderShopName = input.shopName || "ReadyGo HK";
+          const matchedShop = await getShopByName(orderShopName);
+          if (matchedShop) {
+            for (const product of allProducts) {
+              const dbProduct = await getProductBySku(product.sku);
+              if (dbProduct) {
+                const newQty = await adjustShopInventory(dbProduct.id, matchedShop.id, -product.quantity);
+                await createInventoryLog({
+                  productId: dbProduct.id,
+                  shopId: matchedShop.id,
+                  quantityChange: -product.quantity,
+                  quantityAfter: newQty,
+                  changeType: 'order',
+                  referenceId: result.id,
+                  referenceType: 'order',
+                  notes: `訂單 ${result.orderNumber} 銷售扣減`,
+                  createdBy: ctx.user.id,
+                });
+              }
+            }
+          }
         }
 
         // 扣除套餐贈品的庫存
         if (input.packageGiftProductIds && input.packageGiftProductIds.length > 0) {
+          const orderShopName = input.shopName || "ReadyGo HK";
+          const matchedShop = await getShopByName(orderShopName);
           for (const productId of input.packageGiftProductIds) {
             await updateProductStock(productId, -1);
+            // 同時扣除商鋪庫存
+            if (matchedShop) {
+              const newQty = await adjustShopInventory(productId, matchedShop.id, -1);
+              await createInventoryLog({
+                productId,
+                shopId: matchedShop.id,
+                quantityChange: -1,
+                quantityAfter: newQty,
+                changeType: 'order',
+                referenceId: result.id,
+                referenceType: 'order',
+                notes: `訂單 ${result.orderNumber} 套餐贈品扣減`,
+                createdBy: ctx.user.id,
+              });
+            }
           }
         }
 
@@ -464,13 +529,38 @@ export const appRouter = router({
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         // 獲取訂單產品明細以恢復庫存
         const orderProductsList = await getOrderProducts(input.id);
         
         // 恢復香港庫存
         for (const product of orderProductsList) {
           await updateProductStockBySku(product.sku, product.quantity);
+        }
+
+        // 恢復商鋪庫存
+        const order = await getOrderById(input.id);
+        if (order) {
+          const matchedShop = await getShopByName(order.shopName);
+          if (matchedShop) {
+            for (const product of orderProductsList) {
+              const dbProduct = await getProductBySku(product.sku);
+              if (dbProduct) {
+                const newQty = await adjustShopInventory(dbProduct.id, matchedShop.id, product.quantity);
+                await createInventoryLog({
+                  productId: dbProduct.id,
+                  shopId: matchedShop.id,
+                  quantityChange: product.quantity,
+                  quantityAfter: newQty,
+                  changeType: 'order_cancel',
+                  referenceId: input.id,
+                  referenceType: 'order',
+                  notes: `訂單 ${order.orderNumber} 刪除恢復庫存`,
+                  createdBy: ctx.user?.id,
+                });
+              }
+            }
+          }
         }
         
         // 刪除訂單產品明細
@@ -608,12 +698,11 @@ export const appRouter = router({
         name: z.string().min(1, "請輸入產品名稱"),
         color: z.string().optional(),
         price: z.number().nonnegative().optional(),
-        stockHK: z.number().nonnegative().optional(),
-        stockCN: z.number().nonnegative().optional(),
+        stockHK: z.number().optional(),
+        stockCN: z.number().optional(),
         isGift: z.enum(["yes", "no"]).optional(),
       }))
       .mutation(async ({ input }) => {
-        // 檢查 SKU 是否已存在
         const existing = await getProductBySku(input.sku);
         if (existing) {
           throw new Error("SKU 已存在");
@@ -640,8 +729,8 @@ export const appRouter = router({
         name: z.string().min(1).optional(),
         color: z.string().optional(),
         price: z.number().nonnegative().optional(),
-        stockHK: z.number().nonnegative().optional(),
-        stockCN: z.number().nonnegative().optional(),
+        stockHK: z.number().optional(),
+        stockCN: z.number().optional(),
         isGift: z.enum(["yes", "no"]).optional(),
       }))
       .mutation(async ({ input }) => {
@@ -1088,6 +1177,377 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteShop(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // 庫存管理
+  inventory: router({
+    // 取得所有商鋪庫存
+    all: protectedProcedure.query(async () => {
+      return getAllShopInventory();
+    }),
+
+    // 取得某間商鋪的庫存
+    byShop: protectedProcedure
+      .input(z.object({ shopId: z.number() }))
+      .query(async ({ input }) => {
+        return getShopInventory(input.shopId);
+      }),
+
+    // 取得某個產品在各商鋪的庫存
+    byProduct: protectedProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return getShopInventoryByProduct(input.productId);
+      }),
+
+    // 調整庫存（允許正數和負數）
+    adjust: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        shopId: z.number(),
+        quantityChange: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const newQty = await adjustShopInventory(input.productId, input.shopId, input.quantityChange);
+        
+        // 記錄庫存變動
+        await createInventoryLog({
+          productId: input.productId,
+          shopId: input.shopId,
+          quantityChange: input.quantityChange,
+          quantityAfter: newQty,
+          changeType: 'manual',
+          notes: input.notes || null,
+          createdBy: ctx.user.id,
+        });
+        
+        return { success: true, newQuantity: newQty };
+      }),
+
+    // 設定庫存（直接設定數量）
+    set: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        shopId: z.number(),
+        quantity: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const existing = await getShopInventoryItem(input.productId, input.shopId);
+        const oldQty = existing?.quantity || 0;
+        const change = input.quantity - oldQty;
+        
+        await upsertShopInventory(input.productId, input.shopId, input.quantity);
+        
+        // 記錄庫存變動
+        await createInventoryLog({
+          productId: input.productId,
+          shopId: input.shopId,
+          quantityChange: change,
+          quantityAfter: input.quantity,
+          changeType: 'manual',
+          notes: input.notes || `庫存設定為 ${input.quantity}`,
+          createdBy: ctx.user.id,
+        });
+        
+        return { success: true };
+      }),
+
+    // 庫存變動記錄
+    logs: protectedProcedure
+      .input(z.object({
+        productId: z.number().optional(),
+        shopId: z.number().optional(),
+        changeType: z.string().optional(),
+        limit: z.number().default(100),
+        offset: z.number().default(0),
+      }).optional())
+      .query(async ({ input }) => {
+        return getInventoryLogs({
+          productId: input?.productId,
+          shopId: input?.shopId,
+          changeType: input?.changeType,
+          limit: input?.limit || 100,
+          offset: input?.offset || 0,
+        });
+      }),
+  }),
+
+  // 採購訂單管理
+  purchaseOrders: router({
+    list: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        shopId: z.number().optional(),
+        limit: z.number().default(50),
+        offset: z.number().default(0),
+      }).optional())
+      .query(async ({ input }) => {
+        return getPurchaseOrders({
+          status: input?.status,
+          shopId: input?.shopId,
+          limit: input?.limit || 50,
+          offset: input?.offset || 0,
+        });
+      }),
+
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const po = await getPurchaseOrderById(input.id);
+        if (!po) return null;
+        
+        const items = await getPurchaseOrderItems(input.id);
+        const shop = await getShopById(po.shopId);
+        
+        return {
+          ...po,
+          shopName: shop?.name || '未知商鋪',
+          items,
+        };
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        supplier: z.string().min(1, "請輸入供應商名稱"),
+        shopId: z.number(),
+        orderDate: z.string(),
+        notes: z.string().optional(),
+        pdfUrl: z.string().optional(),
+        items: z.array(z.object({
+          productId: z.number(),
+          sku: z.string(),
+          productName: z.string(),
+          color: z.string().optional(),
+          quantity: z.number().positive(),
+          unitCost: z.number().nonnegative(),
+        })),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // 計算總金額
+        const totalAmount = input.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
+        
+        const result = await createPurchaseOrder({
+          supplier: input.supplier,
+          shopId: input.shopId,
+          orderDate: new Date(input.orderDate),
+          status: 'draft',
+          pdfUrl: input.pdfUrl || null,
+          totalAmount: totalAmount.toString(),
+          notes: input.notes || null,
+          createdBy: ctx.user.id,
+        });
+        
+        // 新增採購明細
+        await addPurchaseOrderItems(result.id, input.items.map(item => ({
+          productId: item.productId,
+          sku: item.sku,
+          productName: item.productName,
+          color: item.color || null,
+          quantity: item.quantity,
+          unitCost: item.unitCost.toString(),
+        })));
+        
+        return result;
+      }),
+
+    // 更新採購單狀態
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["draft", "ordered", "received", "cancelled"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const po = await getPurchaseOrderById(input.id);
+        if (!po) throw new Error("採購單不存在");
+        
+        // 當狀態變為 "received" 時，自動增加庫存
+        if (input.status === 'received' && po.status !== 'received') {
+          const items = await getPurchaseOrderItems(input.id);
+          
+          for (const item of items) {
+            const newQty = await adjustShopInventory(item.productId, po.shopId, item.quantity);
+            
+            // 記錄庫存變動
+            await createInventoryLog({
+              productId: item.productId,
+              shopId: po.shopId,
+              quantityChange: item.quantity,
+              quantityAfter: newQty,
+              changeType: 'purchase',
+              referenceId: input.id,
+              referenceType: 'purchaseOrder',
+              notes: `採購入庫 - ${po.poNumber}`,
+              createdBy: ctx.user.id,
+            });
+          }
+        }
+        
+        await updatePurchaseOrder(input.id, { status: input.status });
+        return { success: true };
+      }),
+
+    // 上傳採購單 PDF
+    uploadPdf: protectedProcedure
+      .input(z.object({
+        filename: z.string(),
+        data: z.string(), // Base64 encoded
+        contentType: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { storagePut } = await import("./storage");
+        const buffer = Buffer.from(input.data, "base64");
+        const randomSuffix = Math.random().toString(36).substring(2, 10);
+        const fileKey = `purchase-orders/${Date.now()}-${randomSuffix}-${input.filename}`;
+        const { url } = await storagePut(fileKey, buffer, input.contentType);
+        return { url };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const po = await getPurchaseOrderById(input.id);
+        if (!po) throw new Error("採購單不存在");
+        if (po.status === 'received') {
+          throw new Error("已收貨的採購單不可刪除");
+        }
+        await deletePurchaseOrder(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // 庫存調撥管理
+  stockTransfers: router({
+    list: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        fromShopId: z.number().optional(),
+        toShopId: z.number().optional(),
+        limit: z.number().default(50),
+        offset: z.number().default(0),
+      }).optional())
+      .query(async ({ input }) => {
+        return getStockTransfers({
+          status: input?.status,
+          fromShopId: input?.fromShopId,
+          toShopId: input?.toShopId,
+          limit: input?.limit || 50,
+          offset: input?.offset || 0,
+        });
+      }),
+
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const transfer = await getStockTransferById(input.id);
+        if (!transfer) return null;
+        
+        const items = await getStockTransferItems(input.id);
+        const fromShop = await getShopById(transfer.fromShopId);
+        const toShop = await getShopById(transfer.toShopId);
+        
+        return {
+          ...transfer,
+          fromShopName: fromShop?.name || '未知商鋪',
+          toShopName: toShop?.name || '未知商鋪',
+          items,
+        };
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        fromShopId: z.number(),
+        toShopId: z.number(),
+        notes: z.string().optional(),
+        items: z.array(z.object({
+          productId: z.number(),
+          sku: z.string(),
+          productName: z.string(),
+          color: z.string().optional(),
+          quantity: z.number().positive(),
+        })),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (input.fromShopId === input.toShopId) {
+          throw new Error("來源商鋪和目標商鋪不能相同");
+        }
+        
+        const result = await createStockTransfer({
+          fromShopId: input.fromShopId,
+          toShopId: input.toShopId,
+          status: 'pending',
+          notes: input.notes || null,
+          createdBy: ctx.user.id,
+        });
+        
+        // 新增調撥明細
+        await addStockTransferItems(result.id, input.items.map(item => ({
+          productId: item.productId,
+          sku: item.sku,
+          productName: item.productName,
+          color: item.color || null,
+          quantity: item.quantity,
+        })));
+        
+        return result;
+      }),
+
+    // 確認調撥（執行庫存轉移）
+    confirm: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const transfer = await getStockTransferById(input.id);
+        if (!transfer) throw new Error("調撥單不存在");
+        if (transfer.status !== 'pending') throw new Error("只有待確認的調撥單可以執行");
+        
+        const items = await getStockTransferItems(input.id);
+        
+        for (const item of items) {
+          // 從來源商鋪扣減
+          const fromNewQty = await adjustShopInventory(item.productId, transfer.fromShopId, -item.quantity);
+          await createInventoryLog({
+            productId: item.productId,
+            shopId: transfer.fromShopId,
+            quantityChange: -item.quantity,
+            quantityAfter: fromNewQty,
+            changeType: 'transfer_out',
+            referenceId: input.id,
+            referenceType: 'stockTransfer',
+            notes: `調撥出庫 - ${transfer.transferNumber}`,
+            createdBy: ctx.user.id,
+          });
+          
+          // 到目標商鋪增加
+          const toNewQty = await adjustShopInventory(item.productId, transfer.toShopId, item.quantity);
+          await createInventoryLog({
+            productId: item.productId,
+            shopId: transfer.toShopId,
+            quantityChange: item.quantity,
+            quantityAfter: toNewQty,
+            changeType: 'transfer_in',
+            referenceId: input.id,
+            referenceType: 'stockTransfer',
+            notes: `調撥入庫 - ${transfer.transferNumber}`,
+            createdBy: ctx.user.id,
+          });
+        }
+        
+        await updateStockTransfer(input.id, { status: 'completed' });
+        return { success: true };
+      }),
+
+    // 取消調撥
+    cancel: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const transfer = await getStockTransferById(input.id);
+        if (!transfer) throw new Error("調撥單不存在");
+        if (transfer.status !== 'pending') throw new Error("只有待確認的調撥單可以取消");
+        
+        await updateStockTransfer(input.id, { status: 'cancelled' });
         return { success: true };
       }),
   }),

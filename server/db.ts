@@ -1,6 +1,6 @@
 import { eq, desc, and, like, or, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, customers, payments, shops, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, InsertCustomer, InsertPayment, Order, Package, Product, OrderProduct, OrderPackage, Customer, Payment, Shop, InsertShop } from "../drizzle/schema";
+import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, customers, payments, shops, shopInventory, inventoryLogs, purchaseOrders, purchaseOrderItems, stockTransfers, stockTransferItems, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, InsertCustomer, InsertPayment, Order, Package, Product, OrderProduct, OrderPackage, Customer, Payment, Shop, InsertShop, ShopInventory, InsertShopInventory, InventoryLog, InsertInventoryLog, PurchaseOrder, InsertPurchaseOrder, PurchaseOrderItem, InsertPurchaseOrderItem, StockTransfer, InsertStockTransfer, StockTransferItem, InsertStockTransferItem } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -888,4 +888,386 @@ export async function deleteShop(id: number): Promise<void> {
   if (!db) throw new Error("Database not available");
   
   await db.delete(shops).where(eq(shops.id, id));
+}
+
+
+// ==================== Shop Inventory Operations ====================
+
+export async function getShopInventory(shopId: number): Promise<(ShopInventory & { product?: Product })[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    inventory: shopInventory,
+    product: products,
+  })
+    .from(shopInventory)
+    .leftJoin(products, eq(shopInventory.productId, products.id))
+    .where(eq(shopInventory.shopId, shopId));
+  
+  return result.map(r => ({
+    ...r.inventory,
+    product: r.product || undefined,
+  }));
+}
+
+export async function getShopInventoryByProduct(productId: number): Promise<(ShopInventory & { shop?: Shop })[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    inventory: shopInventory,
+    shop: shops,
+  })
+    .from(shopInventory)
+    .leftJoin(shops, eq(shopInventory.shopId, shops.id))
+    .where(eq(shopInventory.productId, productId));
+  
+  return result.map(r => ({
+    ...r.inventory,
+    shop: r.shop || undefined,
+  }));
+}
+
+export async function getShopInventoryItem(productId: number, shopId: number): Promise<ShopInventory | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select()
+    .from(shopInventory)
+    .where(and(
+      eq(shopInventory.productId, productId),
+      eq(shopInventory.shopId, shopId)
+    ))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function upsertShopInventory(productId: number, shopId: number, quantity: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getShopInventoryItem(productId, shopId);
+  if (existing) {
+    await db.update(shopInventory)
+      .set({ quantity })
+      .where(eq(shopInventory.id, existing.id));
+  } else {
+    await db.insert(shopInventory).values({ productId, shopId, quantity });
+  }
+}
+
+export async function adjustShopInventory(productId: number, shopId: number, quantityChange: number): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getShopInventoryItem(productId, shopId);
+  const currentQty = existing?.quantity || 0;
+  const newQty = currentQty + quantityChange;
+  
+  if (existing) {
+    await db.update(shopInventory)
+      .set({ quantity: newQty })
+      .where(eq(shopInventory.id, existing.id));
+  } else {
+    await db.insert(shopInventory).values({ productId, shopId, quantity: newQty });
+  }
+  
+  return newQty;
+}
+
+export async function getAllShopInventory(): Promise<(ShopInventory & { product?: Product; shop?: Shop })[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    inventory: shopInventory,
+    product: products,
+    shop: shops,
+  })
+    .from(shopInventory)
+    .leftJoin(products, eq(shopInventory.productId, products.id))
+    .leftJoin(shops, eq(shopInventory.shopId, shops.id))
+    .orderBy(shops.sortOrder, shops.name, products.sku);
+  
+  return result.map(r => ({
+    ...r.inventory,
+    product: r.product || undefined,
+    shop: r.shop || undefined,
+  }));
+}
+
+// ==================== Inventory Log Operations ====================
+
+export async function createInventoryLog(log: Omit<InsertInventoryLog, 'id' | 'createdAt'>): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(inventoryLogs).values(log);
+  return Number(result[0].insertId);
+}
+
+export async function getInventoryLogs(filters?: {
+  productId?: number;
+  shopId?: number;
+  changeType?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<InventoryLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (filters?.productId) conditions.push(eq(inventoryLogs.productId, filters.productId));
+  if (filters?.shopId) conditions.push(eq(inventoryLogs.shopId, filters.shopId));
+  if (filters?.changeType) conditions.push(eq(inventoryLogs.changeType, filters.changeType as InventoryLog['changeType']));
+  
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  
+  return db.select()
+    .from(inventoryLogs)
+    .where(whereClause)
+    .orderBy(desc(inventoryLogs.createdAt))
+    .limit(filters?.limit || 100)
+    .offset(filters?.offset || 0);
+}
+
+// ==================== Purchase Order Operations ====================
+
+async function generatePONumber(): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const now = new Date();
+  const prefix = `PO${now.getFullYear().toString().slice(2)}${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  
+  const result = await db.select({ poNumber: purchaseOrders.poNumber })
+    .from(purchaseOrders)
+    .where(like(purchaseOrders.poNumber, `${prefix}%`))
+    .orderBy(desc(purchaseOrders.poNumber))
+    .limit(1);
+  
+  let nextNumber = 1;
+  if (result.length > 0 && result[0].poNumber) {
+    const lastNumber = result[0].poNumber.replace(prefix, '');
+    nextNumber = parseInt(lastNumber, 10) + 1;
+  }
+  
+  return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+}
+
+export async function createPurchaseOrder(data: Omit<InsertPurchaseOrder, 'poNumber'>): Promise<{ id: number; poNumber: string }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const poNumber = await generatePONumber();
+  const result = await db.insert(purchaseOrders).values({
+    ...data,
+    poNumber,
+  });
+  
+  return { id: Number(result[0].insertId), poNumber };
+}
+
+export async function getPurchaseOrderById(id: number): Promise<PurchaseOrder | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getPurchaseOrders(filters?: {
+  status?: string;
+  shopId?: number;
+  limit?: number;
+  offset?: number;
+}): Promise<{ orders: PurchaseOrder[]; total: number }> {
+  const db = await getDb();
+  if (!db) return { orders: [], total: 0 };
+  
+  const conditions = [];
+  if (filters?.status) conditions.push(eq(purchaseOrders.status, filters.status as PurchaseOrder['status']));
+  if (filters?.shopId) conditions.push(eq(purchaseOrders.shopId, filters.shopId));
+  
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  
+  const [ordersResult, countResult] = await Promise.all([
+    db.select()
+      .from(purchaseOrders)
+      .where(whereClause)
+      .orderBy(desc(purchaseOrders.createdAt))
+      .limit(filters?.limit || 50)
+      .offset(filters?.offset || 0),
+    db.select({ count: sql<number>`count(*)` })
+      .from(purchaseOrders)
+      .where(whereClause),
+  ]);
+  
+  return {
+    orders: ordersResult,
+    total: Number(countResult[0]?.count || 0),
+  };
+}
+
+export async function updatePurchaseOrder(id: number, data: Partial<InsertPurchaseOrder>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(purchaseOrders).set(data).where(eq(purchaseOrders.id, id));
+}
+
+export async function deletePurchaseOrder(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 刪除明細
+  await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, id));
+  // 刪除主單
+  await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+}
+
+// ==================== Purchase Order Item Operations ====================
+
+export async function addPurchaseOrderItems(purchaseOrderId: number, items: Omit<InsertPurchaseOrderItem, 'purchaseOrderId'>[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  if (items.length === 0) return;
+  
+  const values = items.map(item => ({
+    ...item,
+    purchaseOrderId,
+  }));
+  
+  await db.insert(purchaseOrderItems).values(values);
+}
+
+export async function getPurchaseOrderItems(purchaseOrderId: number): Promise<PurchaseOrderItem[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(purchaseOrderItems)
+    .where(eq(purchaseOrderItems.purchaseOrderId, purchaseOrderId));
+}
+
+export async function deletePurchaseOrderItems(purchaseOrderId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, purchaseOrderId));
+}
+
+// ==================== Stock Transfer Operations ====================
+
+async function generateTransferNumber(): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const now = new Date();
+  const prefix = `TR${now.getFullYear().toString().slice(2)}${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  
+  const result = await db.select({ transferNumber: stockTransfers.transferNumber })
+    .from(stockTransfers)
+    .where(like(stockTransfers.transferNumber, `${prefix}%`))
+    .orderBy(desc(stockTransfers.transferNumber))
+    .limit(1);
+  
+  let nextNumber = 1;
+  if (result.length > 0 && result[0].transferNumber) {
+    const lastNumber = result[0].transferNumber.replace(prefix, '');
+    nextNumber = parseInt(lastNumber, 10) + 1;
+  }
+  
+  return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+}
+
+export async function createStockTransfer(data: Omit<InsertStockTransfer, 'transferNumber'>): Promise<{ id: number; transferNumber: string }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const transferNumber = await generateTransferNumber();
+  const result = await db.insert(stockTransfers).values({
+    ...data,
+    transferNumber,
+  });
+  
+  return { id: Number(result[0].insertId), transferNumber };
+}
+
+export async function getStockTransferById(id: number): Promise<StockTransfer | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(stockTransfers).where(eq(stockTransfers.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getStockTransfers(filters?: {
+  status?: string;
+  fromShopId?: number;
+  toShopId?: number;
+  limit?: number;
+  offset?: number;
+}): Promise<{ transfers: StockTransfer[]; total: number }> {
+  const db = await getDb();
+  if (!db) return { transfers: [], total: 0 };
+  
+  const conditions = [];
+  if (filters?.status) conditions.push(eq(stockTransfers.status, filters.status as StockTransfer['status']));
+  if (filters?.fromShopId) conditions.push(eq(stockTransfers.fromShopId, filters.fromShopId));
+  if (filters?.toShopId) conditions.push(eq(stockTransfers.toShopId, filters.toShopId));
+  
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  
+  const [transfersResult, countResult] = await Promise.all([
+    db.select()
+      .from(stockTransfers)
+      .where(whereClause)
+      .orderBy(desc(stockTransfers.createdAt))
+      .limit(filters?.limit || 50)
+      .offset(filters?.offset || 0),
+    db.select({ count: sql<number>`count(*)` })
+      .from(stockTransfers)
+      .where(whereClause),
+  ]);
+  
+  return {
+    transfers: transfersResult,
+    total: Number(countResult[0]?.count || 0),
+  };
+}
+
+export async function updateStockTransfer(id: number, data: Partial<InsertStockTransfer>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(stockTransfers).set(data).where(eq(stockTransfers.id, id));
+}
+
+// ==================== Stock Transfer Item Operations ====================
+
+export async function addStockTransferItems(transferId: number, items: Omit<InsertStockTransferItem, 'transferId'>[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  if (items.length === 0) return;
+  
+  const values = items.map(item => ({
+    ...item,
+    transferId,
+  }));
+  
+  await db.insert(stockTransferItems).values(values);
+}
+
+export async function getStockTransferItems(transferId: number): Promise<StockTransferItem[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(stockTransferItems)
+    .where(eq(stockTransferItems.transferId, transferId));
 }
