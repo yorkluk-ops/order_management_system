@@ -1,0 +1,15 @@
+{
+  "query": "SELECT \n  COUNT(*) AS total_orders,\n  SUM(CASE WHEN deliveryDate IS NULL THEN 1 ELSE 0 END) AS no_delivery_date,\n  SUM(CASE WHEN deliveryDate IS NOT NULL THEN 1 ELSE 0 END) AS has_delivery_date\nFROM orders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT \n  COUNT(*) AS total_orders,\n  SUM(CASE WHEN deliveryDate IS NULL THEN 1 ELSE 0 END) AS no_delivery_date,\n  SUM(CASE WHEN deliveryDate IS NOT NULL THEN 1 ELSE 0 END) AS has_delivery_date\nFROM orders;",
+  "rows": [
+    {
+      "total_orders": "269",
+      "no_delivery_date": "6",
+      "has_delivery_date": "263"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_orders\tno_delivery_date\thas_delivery_date\n269\t6\t263\n",
+  "stderr": "",
+  "execution_time_ms": 1602
+}

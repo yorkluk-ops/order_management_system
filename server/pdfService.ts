@@ -467,3 +467,246 @@ export async function generateInvoicePdf(order: OrderForPdf): Promise<Buffer> {
 export async function generateReceiptPdf(order: OrderForPdf): Promise<Buffer> {
   return buildPdf(order, "receipt", "收據");
 }
+
+
+// ==================== 庫存調撥單 / 送貨單 PDF ====================
+
+export interface TransferForPdf {
+  transferNumber: string;
+  fromShopName: string;
+  fromShopPhone: string | null;
+  fromShopAddress: string | null;
+  toShopName: string;
+  toShopPhone: string | null;
+  toShopAddress: string | null;
+  status: string;
+  notes: string | null;
+  createdAt: Date | string;
+  items: Array<{
+    sku: string;
+    productName: string;
+    color: string | null;
+    quantity: number;
+  }>;
+}
+
+export async function generateTransferPdf(transfer: TransferForPdf): Promise<Buffer> {
+  const fontPath = await ensureFont();
+  const logoBuffer = await ensureLogo();
+
+  const totalItems = transfer.items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const doc = new PDFDocument({
+    size: "A4",
+    margins: { top: 40, bottom: 40, left: 50, right: 50 },
+    bufferPages: true,
+  });
+
+  doc.registerFont("NotoSansTC", fontPath);
+  doc.font("NotoSansTC");
+
+  const chunks: Buffer[] = [];
+  doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+
+  const pageWidth = doc.page.width;
+  const mL = 50;
+  const mR = 50;
+  const cW = pageWidth - mL - mR;
+
+  // ===== TITLE =====
+  let y = 40;
+  doc.fontSize(28).fillColor(BLACK).text("調撥單 / 送貨單", mL, y);
+  y += 40;
+
+  // ===== LOGO + COMPANY INFO =====
+  if (logoBuffer) {
+    try {
+      doc.image(logoBuffer, mL, y, { width: 55, height: 55 });
+    } catch { /* skip */ }
+  }
+  const companyInfoX = mL + 70;
+  doc.fontSize(10).fillColor(BLACK).text("奧創數碼有限公司", companyInfoX, y + 2);
+  doc.fontSize(8).fillColor(DARK_TEXT).text("ULTRON DIGITAL COMPANY LIMITED", companyInfoX, y + 16);
+  doc.fontSize(8).fillColor(MEDIUM).text("地址：觀塘海濱道177號海裕工業中心7樓B1A", companyInfoX, y + 30);
+  doc.fontSize(8).fillColor(MEDIUM).text("電話：+852 4485 9954", companyInfoX, y + 42);
+  y += 65;
+
+  // ===== TRANSFER META INFO =====
+  const labelX = mL;
+  const valueX = mL + 70;
+  const metaFontSize = 9.5;
+  const metaLineHeight = 16;
+
+  const statusLabel = transfer.status === "completed" ? "已完成" : transfer.status === "cancelled" ? "已取消" : "待確認";
+
+  const metaFields = [
+    { label: "調撥單號", value: transfer.transferNumber },
+    { label: "建立日期", value: formatDateTime(transfer.createdAt) },
+    { label: "列印日期", value: formatDateTime(new Date()) },
+    { label: "調撥狀態", value: statusLabel },
+  ];
+
+  metaFields.forEach((field) => {
+    doc.fontSize(metaFontSize).fillColor(BLACK).text(field.label, labelX, y, { continued: false });
+    doc.fontSize(metaFontSize).fillColor(DARK_TEXT).text(field.value, valueX, y);
+    y += metaLineHeight;
+  });
+
+  y += 10;
+
+  // ===== FROM / TO SHOP INFO (side by side) =====
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+  y += 12;
+
+  const halfW = cW / 2;
+
+  // Left: From shop
+  doc.fontSize(10).fillColor(BLACK).text("調出商鋪（來源）", mL, y);
+  let leftY = y + 18;
+  doc.fontSize(10).fillColor(DARK_TEXT).text(transfer.fromShopName, mL, leftY);
+  leftY += 16;
+  if (transfer.fromShopPhone) {
+    doc.fontSize(9).fillColor(MEDIUM).text(`電話：${transfer.fromShopPhone}`, mL, leftY);
+    leftY += 14;
+  }
+  if (transfer.fromShopAddress) {
+    doc.fontSize(9).fillColor(MEDIUM).text(`地址：${transfer.fromShopAddress}`, mL, leftY, { width: halfW - 20 });
+    leftY += 14 * Math.ceil(transfer.fromShopAddress.length / 20);
+  }
+
+  // Right: To shop
+  const rightX = mL + halfW + 20;
+  doc.fontSize(10).fillColor(BLACK).text("調入商鋪（目標）", rightX, y);
+  let rightY = y + 18;
+  doc.fontSize(10).fillColor(DARK_TEXT).text(transfer.toShopName, rightX, rightY);
+  rightY += 16;
+  if (transfer.toShopPhone) {
+    doc.fontSize(9).fillColor(MEDIUM).text(`電話：${transfer.toShopPhone}`, rightX, rightY);
+    rightY += 14;
+  }
+  if (transfer.toShopAddress) {
+    doc.fontSize(9).fillColor(MEDIUM).text(`地址：${transfer.toShopAddress}`, rightX, rightY, { width: halfW - 20 });
+    rightY += 14 * Math.ceil(transfer.toShopAddress.length / 20);
+  }
+
+  y = Math.max(leftY, rightY) + 16;
+
+  // ===== PRODUCTS TABLE =====
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(BORDER).lineWidth(0.5).stroke();
+  y += 2;
+
+  // Table header
+  const headerH = 26;
+  doc.rect(mL, y, cW, headerH).fillColor(TABLE_HEADER_BG).fill();
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(BORDER).lineWidth(0.5).stroke();
+  doc.moveTo(mL, y + headerH).lineTo(pageWidth - mR, y + headerH).strokeColor(BORDER).lineWidth(0.5).stroke();
+
+  // Column widths
+  const colNo = cW * 0.08;
+  const colSku = cW * 0.22;
+  const colName = cW * 0.40;
+  const colColor = cW * 0.15;
+  const colQty = cW * 0.15;
+
+  doc.fontSize(9).fillColor(BLACK);
+  doc.text("#", mL + 8, y + 7, { width: colNo });
+  doc.text("SKU", mL + colNo, y + 7, { width: colSku });
+  doc.text("產品名稱", mL + colNo + colSku, y + 7, { width: colName });
+  doc.text("顏色", mL + colNo + colSku + colName, y + 7, { width: colColor });
+  doc.text("數量", mL + colNo + colSku + colName + colColor, y + 7, { width: colQty - 8, align: "right" });
+
+  y += headerH;
+
+  // Product rows
+  transfer.items.forEach((item, index) => {
+    const rowH = 32;
+
+    if (y + rowH > doc.page.height - 100) {
+      doc.addPage();
+      y = 40;
+    }
+
+    doc.fontSize(9).fillColor(DARK_TEXT).text(`${index + 1}`, mL + 8, y + 10, { width: colNo });
+    doc.fontSize(9).fillColor(DARK_TEXT).text(item.sku, mL + colNo, y + 10, { width: colSku });
+    doc.fontSize(9.5).fillColor(BLACK).text(item.productName, mL + colNo + colSku, y + 10, { width: colName });
+    doc.fontSize(9).fillColor(DARK_TEXT).text(item.color || "-", mL + colNo + colSku + colName, y + 10, { width: colColor });
+    doc.fontSize(10).fillColor(BLACK).text(`x${item.quantity}`, mL + colNo + colSku + colName + colColor, y + 10, { width: colQty - 8, align: "right" });
+
+    y += rowH;
+    doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+  });
+
+  // Total row
+  y += 4;
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(BLACK).lineWidth(1).stroke();
+  y += 8;
+  doc.fontSize(10).fillColor(BLACK).text("合計", mL + colNo + colSku + colName, y, { width: colColor });
+  doc.fontSize(11).fillColor(BLACK).text(`${totalItems} 件`, mL + colNo + colSku + colName + colColor, y, { width: colQty - 8, align: "right" });
+  y += 30;
+
+  // ===== NOTES =====
+  if (transfer.notes) {
+    if (y + 40 > doc.page.height - 100) {
+      doc.addPage();
+      y = 40;
+    }
+    doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+    y += 10;
+    doc.fontSize(9).fillColor(LIGHT_TEXT).text("備註", mL, y);
+    y += 14;
+    doc.fontSize(9).fillColor(DARK_TEXT).text(transfer.notes, mL, y, { width: cW });
+    y += 30;
+  }
+
+  // ===== SIGNATURE AREA =====
+  if (y + 120 > doc.page.height - 60) {
+    doc.addPage();
+    y = 40;
+  }
+
+  y += 20;
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+  y += 20;
+
+  doc.fontSize(10).fillColor(BLACK).text("簽收確認", mL, y);
+  y += 20;
+
+  // Signature lines
+  const sigLineWidth = (cW - 40) / 2;
+  const sigLeftX = mL;
+  const sigRightX = mL + sigLineWidth + 40;
+
+  // Left: Sender
+  doc.fontSize(9).fillColor(MEDIUM).text("調出方簽名：", sigLeftX, y);
+  y += 30;
+  doc.moveTo(sigLeftX, y).lineTo(sigLeftX + sigLineWidth, y).strokeColor(BORDER).lineWidth(0.5).stroke();
+  y += 8;
+  doc.fontSize(8).fillColor(LIGHT_TEXT).text("簽名 / 日期", sigLeftX, y);
+
+  // Right: Receiver (same y level)
+  const sigStartY = y - 38;
+  doc.fontSize(9).fillColor(MEDIUM).text("調入方簽名：", sigRightX, sigStartY);
+  doc.moveTo(sigRightX, sigStartY + 30).lineTo(sigRightX + sigLineWidth, sigStartY + 30).strokeColor(BORDER).lineWidth(0.5).stroke();
+  doc.fontSize(8).fillColor(LIGHT_TEXT).text("簽名 / 日期", sigRightX, sigStartY + 38);
+
+  y += 30;
+
+  // ===== FOOTER =====
+  if (y + 60 > doc.page.height - 40) {
+    doc.addPage();
+    y = 40;
+  }
+  y = Math.max(y + 20, doc.page.height - 80);
+  doc.moveTo(mL, y).lineTo(pageWidth - mR, y).strokeColor(LIGHT_BORDER).lineWidth(0.5).stroke();
+  y += 10;
+  doc.fontSize(9).fillColor(BLACK).text("奧創數碼有限公司 Ultron Digital Limited", mL, y, { width: cW, align: "center" });
+  y += 14;
+  doc.fontSize(8.5).fillColor(MEDIUM).text("+852 4485 9954  |  https://ultrondigital.com.hk/", mL, y, { width: cW, align: "center" });
+
+  doc.end();
+
+  return new Promise((resolve, reject) => {
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+  });
+}

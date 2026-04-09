@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Plus, ArrowRightLeft, Eye, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { Plus, ArrowRightLeft, Eye, CheckCircle, XCircle, Trash2, FileDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -96,6 +96,29 @@ export default function StockTransferList() {
     onError: (error) => toast.error("取消失敗: " + error.message),
   });
 
+  const generatePdfMutation = trpc.stockTransfers.generatePdf.useMutation({
+    onSuccess: (data) => {
+      // Convert base64 to blob and download
+      const byteCharacters = atob(data.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: data.contentType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("調撥單 PDF 已下載");
+    },
+    onError: (error) => toast.error("PDF 生成失敗: " + error.message),
+  });
+
   const resetForm = () => {
     setFromShopId(null);
     setToShopId(null);
@@ -149,6 +172,10 @@ export default function StockTransferList() {
         quantity: item.quantity,
       })),
     });
+  };
+
+  const handleDownloadPdf = (transferId: number) => {
+    generatePdfMutation.mutate({ id: transferId });
   };
 
   return (
@@ -239,8 +266,17 @@ export default function StockTransferList() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => { setSelectedTransferId(transfer.id); setShowDetailDialog(true); }}>
+                              <Button variant="ghost" size="sm" onClick={() => { setSelectedTransferId(transfer.id); setShowDetailDialog(true); }} title="查看詳情">
                                 <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownloadPdf(transfer.id)}
+                                disabled={generatePdfMutation.isPending}
+                                title="下載調撥單 PDF"
+                              >
+                                <FileDown className="h-4 w-4 text-blue-500" />
                               </Button>
                               {transfer.status === "pending" && (
                                 <>
@@ -265,7 +301,7 @@ export default function StockTransferList() {
                 <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
                   <ArrowRightLeft className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <p className="text-muted-foreground mb-4">尚無調撥單</p>
+                <p className="text-muted-foreground mb-4">尚未建立任何調撥單</p>
                 <Button onClick={() => { resetForm(); setShowCreateDialog(true); }}>
                   <Plus className="mr-2 h-4 w-4" />
                   建立第一張調撥單
@@ -404,7 +440,20 @@ export default function StockTransferList() {
       <Dialog open={showDetailDialog} onOpenChange={(open) => { setShowDetailDialog(open); if (!open) setSelectedTransferId(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>調撥單詳情</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              <span>調撥單詳情</span>
+              {transferDetail && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownloadPdf(transferDetail.id)}
+                  disabled={generatePdfMutation.isPending}
+                >
+                  <FileDown className="mr-2 h-4 w-4" />
+                  {generatePdfMutation.isPending ? "生成中..." : "下載 PDF"}
+                </Button>
+              )}
+            </DialogTitle>
           </DialogHeader>
           {transferDetail ? (
             <div className="space-y-4">

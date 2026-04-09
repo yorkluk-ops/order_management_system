@@ -1,0 +1,52 @@
+{
+  "query": "SELECT \n  DATE_FORMAT(deliveryDate, '%Y-%m') AS delivery_month,\n  COUNT(*) AS order_count,\n  MIN(deliveryDate) AS earliest,\n  MAX(deliveryDate) AS latest\nFROM orders \nWHERE deliveryDate IS NOT NULL\nGROUP BY delivery_month\nORDER BY delivery_month;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT \n  DATE_FORMAT(deliveryDate, '%Y-%m') AS delivery_month,\n  COUNT(*) AS order_count,\n  MIN(deliveryDate) AS earliest,\n  MAX(deliveryDate) AS latest\nFROM orders \nWHERE deliveryDate IS NOT NULL\nGROUP BY delivery_month\nORDER BY delivery_month;",
+  "rows": [
+    {
+      "delivery_month": "2026-02",
+      "order_count": "70",
+      "earliest": "2026-02-02 00:00:00",
+      "latest": "2026-02-28 00:00:00"
+    },
+    {
+      "delivery_month": "2026-03",
+      "order_count": "63",
+      "earliest": "2026-03-01 00:00:00",
+      "latest": "2026-03-31 00:00:00"
+    },
+    {
+      "delivery_month": "2026-04",
+      "order_count": "36",
+      "earliest": "2026-04-01 00:00:00",
+      "latest": "2026-04-28 00:00:00"
+    },
+    {
+      "delivery_month": "2026-05",
+      "order_count": "43",
+      "earliest": "2026-05-01 00:00:00",
+      "latest": "2026-05-30 00:00:00"
+    },
+    {
+      "delivery_month": "2026-06",
+      "order_count": "35",
+      "earliest": "2026-06-01 00:00:00",
+      "latest": "2026-06-30 00:00:00"
+    },
+    {
+      "delivery_month": "2026-07",
+      "order_count": "13",
+      "earliest": "2026-07-01 00:00:00",
+      "latest": "2026-07-25 00:00:00"
+    },
+    {
+      "delivery_month": "2026-08",
+      "order_count": "3",
+      "earliest": "2026-08-01 00:00:00",
+      "latest": "2026-08-01 00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "delivery_month\torder_count\tearliest\tlatest\n2026-02\t70\t2026-02-02 00:00:00\t2026-02-28 00:00:00\n2026-03\t63\t2026-03-01 00:00:00\t2026-03-31 00:00:00\n2026-04\t36\t2026-04-01 00:00:00\t2026-04-28 00:00:00\n2026-05\t43\t2026-05-01 00:00:00\t2026-05-30 00:00:00\n2026-06\t35\t2026-06-01 00:00:00\t2026-06-30 00:00:00\n2026-07\t13\t2026-07-01 00:00:00\t2026-07-25 00:00:00\n2026-08\t3\t2026-08-01 00:00:00\t2026-08-01 00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 1605
+}

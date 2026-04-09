@@ -1,0 +1,127 @@
+{
+  "query": "SELECT orderNumber, customerName, packageName, shopName, orderAmount, deliveryDate, status\nFROM orders \nWHERE deliveryDate >= '2026-07-01' AND deliveryDate < '2026-08-01'\nORDER BY deliveryDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT orderNumber, customerName, packageName, shopName, orderAmount, deliveryDate, status\nFROM orders \nWHERE deliveryDate >= '2026-07-01' AND deliveryDate < '2026-08-01'\nORDER BY deliveryDate;",
+  "rows": [
+    {
+      "orderNumber": "26EGB0066",
+      "customerName": "黃生",
+      "packageName": "UV機套餐 UP920 4選1",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "3188.00",
+      "deliveryDate": "2026-07-01 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0057",
+      "customerName": "楊小姐",
+      "packageName": "全方位支援套裝(3選2)",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "4780.00",
+      "deliveryDate": "2026-07-02 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0201",
+      "customerName": "chloe yeung",
+      "packageName": "全方位支援套裝(3選2)",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "4780.00",
+      "deliveryDate": "2026-07-02 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0185",
+      "customerName": "無",
+      "packageName": "其他｜單件產品購買",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "2888.00",
+      "deliveryDate": "2026-07-03 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0148",
+      "customerName": "嚴麗儀",
+      "packageName": "UV機套餐 UP920 4選1",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "3188.00",
+      "deliveryDate": "2026-07-03 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0219",
+      "customerName": "LEE",
+      "packageName": "其他｜單件產品購買",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "6160.00",
+      "deliveryDate": "2026-07-04 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0236",
+      "customerName": "CHENG SHING LUN",
+      "packageName": "其他｜單件產品購買",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "1680.00",
+      "deliveryDate": "2026-07-04 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0048",
+      "customerName": "蔣小姐",
+      "packageName": "UV機套餐 UP920 4選1",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "3188.00",
+      "deliveryDate": "2026-07-10 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0090",
+      "customerName": "Joanne Leung",
+      "packageName": "UV機套餐 UP920 4選1",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "3188.00",
+      "deliveryDate": "2026-07-11 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0056",
+      "customerName": "katy chan",
+      "packageName": "全方位支援套裝(3選2)",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "4780.00",
+      "deliveryDate": "2026-07-15 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0044",
+      "customerName": "mr.fu",
+      "packageName": "UV機套餐 UP920 4選1",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "3188.00",
+      "deliveryDate": "2026-07-15 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0142",
+      "customerName": "楊",
+      "packageName": "全方位支援套裝(3選2)",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "4780.00",
+      "deliveryDate": "2026-07-18 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0134",
+      "customerName": "張生",
+      "packageName": "EUFY E20入門套裝 4選1",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "3780.00",
+      "deliveryDate": "2026-07-25 00:00:00",
+      "status": "pending"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tpackageName\tshopName\torderAmount\tdeliveryDate\tstatus\n26EGB0066\t黃生\tUV機套餐 UP920 4選1\tReadyGo HK\t3188.00\t2026-07-01 00:00:00\tpending\n26EGB0057\t楊小姐\t全方位支援套裝(3選2)\tReadyGo HK\t4780.00\t2026-07-02 00:00:00\tpending\n26EGB0201\tchloe yeung\t全方位支援套裝(3選2)\tReadyGo HK\t4780.00\t2026-07-02 00:00:00\tpending\n26EGB0185\t無\t其他｜單件產品購買\tReadyGo HK\t2888.00\t2026-07-03 00:00:00\tpending\n26EGB0148\t嚴麗儀\tUV機套餐 UP920 4選1\tReadyGo HK\t3188.00\t2026-07-03 00:00:00\tpending\n26EGB0219\tLEE\t其他｜單件產品購買\tReadyGo HK\t6160.00\t2026-07-04 00:00:00\tpending\n26EGB0236\tCHENG SHING LUN\t其他｜單件產品購買\tReadyGo HK\t1680.00\t2026-07-04 00:00:00\tpending\n26EGB0048\t蔣小姐\tUV機套餐 UP920 4選1\tReadyGo HK\t3188.00\t2026-07-10 00:00:00\tpending\n26EGB0090\tJoanne Leung\tUV機套餐 UP920 4選1\tReadyGo HK\t3188.00\t2026-07-11 00:00:00\tpending\n26EGB0056\tkaty chan\t全方位支援套裝(3選2)\tReadyGo HK\t4780.00\t2026-07-15 00:00:00\tpending\n26EGB0044\tmr.fu\tUV機套餐 UP920 4選1\tReadyGo HK\t3188.00\t2026-07-15 00:00:00\tpending\n26EGB0142\t楊\t全方位支援套裝(3選2)\tReadyGo HK\t4780.00\t2026-07-18 00:00:00\tpending\n26EGB0134\t張生\tEUFY E20入門套裝 4選1\tReadyGo HK\t3780.00\t2026-07-25 00:00:00\tpending\n",
+  "stderr": "",
+  "execution_time_ms": 1578
+}

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -31,16 +32,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Plus, Edit, Trash2, Store, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash2, Store, GripVertical, Phone, MapPin } from "lucide-react";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function ShopList() {
   const [showDialog, setShowDialog] = useState(false);
-  const [editingShop, setEditingShop] = useState<{ id: number; name: string; sortOrder: number } | null>(null);
+  const [editingShop, setEditingShop] = useState<{ id: number; name: string; phone?: string | null; address?: string | null; sortOrder: number } | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formAddress, setFormAddress] = useState("");
   const [formSortOrder, setFormSortOrder] = useState(0);
 
   const { data: shops, isLoading, refetch } = trpc.shops.listAll.useQuery();
@@ -91,13 +94,17 @@ export default function ShopList() {
   function openCreateDialog() {
     setEditingShop(null);
     setFormName("");
+    setFormPhone("");
+    setFormAddress("");
     setFormSortOrder(shops?.length || 0);
     setShowDialog(true);
   }
 
-  function openEditDialog(shop: { id: number; name: string; sortOrder: number }) {
+  function openEditDialog(shop: { id: number; name: string; phone?: string | null; address?: string | null; sortOrder: number }) {
     setEditingShop(shop);
     setFormName(shop.name);
+    setFormPhone(shop.phone || "");
+    setFormAddress(shop.address || "");
     setFormSortOrder(shop.sortOrder);
     setShowDialog(true);
   }
@@ -106,6 +113,8 @@ export default function ShopList() {
     setShowDialog(false);
     setEditingShop(null);
     setFormName("");
+    setFormPhone("");
+    setFormAddress("");
     setFormSortOrder(0);
   }
 
@@ -119,11 +128,15 @@ export default function ShopList() {
       updateMutation.mutate({
         id: editingShop.id,
         name: formName.trim(),
+        phone: formPhone.trim(),
+        address: formAddress.trim(),
         sortOrder: formSortOrder,
       });
     } else {
       createMutation.mutate({
         name: formName.trim(),
+        phone: formPhone.trim(),
+        address: formAddress.trim(),
         sortOrder: formSortOrder,
       });
     }
@@ -149,7 +162,7 @@ export default function ShopList() {
         <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="page-title">商鋪管理</h1>
-            <p className="page-description">管理您的商鋪名稱，用於訂單分類和篩選</p>
+            <p className="page-description">管理您的商鋪資料，包括名稱、電話和地址</p>
           </div>
           <Button onClick={openCreateDialog} className="shadow-sm">
             <Plus className="mr-2 h-4 w-4" />
@@ -175,6 +188,8 @@ export default function ShopList() {
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-[80px]">排序</TableHead>
                     <TableHead>商鋪名稱</TableHead>
+                    <TableHead>電話</TableHead>
+                    <TableHead>地址</TableHead>
                     <TableHead className="w-[100px]">狀態</TableHead>
                     <TableHead className="text-right w-[150px]">操作</TableHead>
                   </TableRow>
@@ -185,6 +200,8 @@ export default function ShopList() {
                       <TableRow key={i}>
                         <TableCell><Skeleton className="h-4 w-8" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                       </TableRow>
@@ -200,6 +217,26 @@ export default function ShopList() {
                         </TableCell>
                         <TableCell className="font-medium">{shop.name}</TableCell>
                         <TableCell>
+                          {shop.phone ? (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Phone className="h-3.5 w-3.5" />
+                              {shop.phone}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground/50 text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {shop.address ? (
+                            <div className="flex items-start gap-1 text-sm text-muted-foreground max-w-[250px]">
+                              <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                              <span className="line-clamp-2">{shop.address}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground/50 text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
                           <Badge
                             variant={shop.isActive === "yes" ? "default" : "secondary"}
                             className="cursor-pointer"
@@ -214,7 +251,7 @@ export default function ShopList() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => openEditDialog({ id: shop.id, name: shop.name, sortOrder: shop.sortOrder })}
+                              onClick={() => openEditDialog({ id: shop.id, name: shop.name, phone: shop.phone, address: shop.address, sortOrder: shop.sortOrder })}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -232,7 +269,7 @@ export default function ShopList() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-32 text-center">
+                      <TableCell colSpan={6} className="h-32 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Store className="h-8 w-8 text-muted-foreground" />
                           <p className="text-muted-foreground">尚未新增任何商鋪</p>
@@ -252,11 +289,11 @@ export default function ShopList() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>{editingShop ? "編輯商鋪" : "新增商鋪"}</DialogTitle>
             <DialogDescription>
-              {editingShop ? "修改商鋪名稱和排序" : "輸入新商鋪的名稱"}
+              {editingShop ? "修改商鋪資料" : "輸入新商鋪的資料"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -267,9 +304,25 @@ export default function ShopList() {
                 placeholder="例如：ReadyGo HK"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSubmit();
-                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shopPhone">電話</Label>
+              <Input
+                id="shopPhone"
+                placeholder="例如：+852 1234 5678"
+                value={formPhone}
+                onChange={(e) => setFormPhone(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shopAddress">地址</Label>
+              <Textarea
+                id="shopAddress"
+                placeholder="例如：香港九龍觀塘..."
+                value={formAddress}
+                onChange={(e) => setFormAddress(e.target.value)}
+                rows={3}
               />
             </div>
             <div className="space-y-2">

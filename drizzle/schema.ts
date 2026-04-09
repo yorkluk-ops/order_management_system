@@ -209,6 +209,8 @@ export type InsertPayment = typeof payments.$inferInsert;
 export const shops = mysqlTable("shops", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull().unique(),
+  phone: varchar("phone", { length: 50 }),
+  address: text("address"),
   sortOrder: int("sortOrder").default(0).notNull(),
   isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -1,0 +1,37 @@
+{
+  "query": "SELECT orderNumber, customerName, packageName, shopName, orderAmount, deliveryDate, status\nFROM orders \nWHERE deliveryDate >= '2026-08-01' AND deliveryDate < '2026-09-01'\nORDER BY deliveryDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT orderNumber, customerName, packageName, shopName, orderAmount, deliveryDate, status\nFROM orders \nWHERE deliveryDate >= '2026-08-01' AND deliveryDate < '2026-09-01'\nORDER BY deliveryDate;",
+  "rows": [
+    {
+      "orderNumber": "26EGB0067",
+      "customerName": "cam",
+      "packageName": "UV機套餐 UP920 4選1",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "3188.00",
+      "deliveryDate": "2026-08-01 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0078",
+      "customerName": "choi chung ki",
+      "packageName": "全方位支援套裝(3選2)",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "4780.00",
+      "deliveryDate": "2026-08-01 00:00:00",
+      "status": "pending"
+    },
+    {
+      "orderNumber": "26EGB0220",
+      "customerName": "LEE CHOW KIT",
+      "packageName": "其他｜單件產品購買",
+      "shopName": "ReadyGo HK",
+      "orderAmount": "6160.00",
+      "deliveryDate": "2026-08-01 00:00:00",
+      "status": "pending"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tpackageName\tshopName\torderAmount\tdeliveryDate\tstatus\n26EGB0067\tcam\tUV機套餐 UP920 4選1\tReadyGo HK\t3188.00\t2026-08-01 00:00:00\tpending\n26EGB0078\tchoi chung ki\t全方位支援套裝(3選2)\tReadyGo HK\t4780.00\t2026-08-01 00:00:00\tpending\n26EGB0220\tLEE CHOW KIT\t其他｜單件產品購買\tReadyGo HK\t6160.00\t2026-08-01 00:00:00\tpending\n",
+  "stderr": "",
+  "execution_time_ms": 1633
+}

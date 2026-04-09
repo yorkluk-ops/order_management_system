@@ -86,7 +86,7 @@ import {
 import { ORDER_STATUS } from "../shared/packages";
 import { notifyOwner } from "./_core/notification";
 import { invokeLLM } from "./_core/llm";
-import { generateQuotationPdf, generateInvoicePdf, generateReceiptPdf, type OrderForPdf } from "./pdfService";
+import { generateQuotationPdf, generateInvoicePdf, generateReceiptPdf, type OrderForPdf, generateTransferPdf, type TransferForPdf } from "./pdfService";
 
 // 日期格式化函數 YYYYMMDD
 function formatDateYYYYMMDD(date: Date): string {
@@ -1135,6 +1135,8 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1, "請輸入商鋪名稱"),
+        phone: z.string().optional(),
+        address: z.string().optional(),
         sortOrder: z.number().default(0),
       }))
       .mutation(async ({ input }) => {
@@ -1144,6 +1146,8 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
         }
         const id = await createShop({
           name: input.name,
+          phone: input.phone || null,
+          address: input.address || null,
           sortOrder: input.sortOrder,
           isActive: "yes",
         });
@@ -1154,6 +1158,8 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
         sortOrder: z.number().optional(),
         isActive: z.enum(["yes", "no"]).optional(),
       }))
@@ -1167,6 +1173,8 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
         }
         const updateData: Record<string, unknown> = {};
         if (data.name !== undefined) updateData.name = data.name;
+        if (data.phone !== undefined) updateData.phone = data.phone || null;
+        if (data.address !== undefined) updateData.address = data.address || null;
         if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
         if (data.isActive !== undefined) updateData.isActive = data.isActive;
         await updateShop(id, updateData as any);
@@ -1549,6 +1557,46 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
         
         await updateStockTransfer(input.id, { status: 'cancelled' });
         return { success: true };
+      }),
+
+    // 生成調撥單 PDF
+    generatePdf: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const transfer = await getStockTransferById(input.id);
+        if (!transfer) throw new Error("調撥單不存在");
+
+        const items = await getStockTransferItems(input.id);
+        const fromShop = await getShopById(transfer.fromShopId);
+        const toShop = await getShopById(transfer.toShopId);
+
+        const transferForPdf: TransferForPdf = {
+          transferNumber: transfer.transferNumber,
+          fromShopName: fromShop?.name || '未知商鋪',
+          fromShopPhone: fromShop?.phone || null,
+          fromShopAddress: fromShop?.address || null,
+          toShopName: toShop?.name || '未知商鋪',
+          toShopPhone: toShop?.phone || null,
+          toShopAddress: toShop?.address || null,
+          status: transfer.status,
+          notes: transfer.notes,
+          createdAt: transfer.createdAt,
+          items: items.map(item => ({
+            sku: item.sku,
+            productName: item.productName,
+            color: item.color,
+            quantity: item.quantity,
+          })),
+        };
+
+        const pdfBuffer = await generateTransferPdf(transferForPdf);
+        const filename = `調撥單_${transfer.transferNumber}.pdf`;
+
+        return {
+          data: pdfBuffer.toString('base64'),
+          filename,
+          contentType: 'application/pdf',
+        };
       }),
   }),
 });

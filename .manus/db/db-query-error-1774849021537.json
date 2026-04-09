@@ -1,0 +1,8 @@
+{
+  "query": "SELECT \n  DATE_FORMAT(delivery_date, '%Y-%m') AS delivery_month,\n  COUNT(*) AS order_count,\n  MIN(delivery_date) AS earliest,\n  MAX(delivery_date) AS latest\nFROM orders \nWHERE delivery_date IS NOT NULL\nGROUP BY delivery_month\nORDER BY delivery_month;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT \n  DATE_FORMAT(delivery_date, '%Y-%m') AS delivery_month,\n  COUNT(*) AS order_count,\n  MIN(delivery_date) AS earliest,\n  MAX(delivery_date) AS latest\nFROM orders \nWHERE delivery_date IS NOT NULL\nGROUP BY delivery_month\nORDER BY delivery_month;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'delivery_date' in 'group statement'"
+  ]
+}
