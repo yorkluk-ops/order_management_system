@@ -63,11 +63,14 @@ async function startServer() {
       const productsWithDetails = await Promise.all(
         orderProductsList.map(async (op: any) => {
           const product = op.productId ? await getProductById(op.productId) : null;
+          // 優先使用 orderProducts 表中記錄的單價，其次使用產品表的單價
+          const unitPrice = Number(op.unitPrice || 0) || (product ? Number(product.price || 0) : 0);
           return {
             sku: op.sku || product?.sku || "",
             name: op.productName || product?.name || "",
             color: op.color || product?.color || "",
             quantity: op.quantity,
+            unitPrice,
             isGift: op.isGift === "yes",
           };
         })
