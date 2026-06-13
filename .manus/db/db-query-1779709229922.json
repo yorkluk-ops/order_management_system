@@ -1,0 +1,72 @@
+{
+  "query": "SELECT id, name, sku, price FROM products WHERE name LIKE '%POLED%' OR name LIKE '%Airluv%' OR name LIKE '%Oreo%' OR name LIKE '%oreo%' OR name LIKE '%風扇%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, name, sku, price FROM products WHERE name LIKE '%POLED%' OR name LIKE '%Airluv%' OR name LIKE '%Oreo%' OR name LIKE '%oreo%' OR name LIKE '%風扇%';",
+  "rows": [
+    {
+      "id": "60002",
+      "name": "AIRLUV4 OREO CREAM ",
+      "sku": "5203107",
+      "price": "0.00"
+    },
+    {
+      "id": "60003",
+      "name": "AIRLUV4 OREO COOKIE 灰",
+      "sku": "5203108",
+      "price": "0.00"
+    },
+    {
+      "id": "60004",
+      "name": "AIRLUV4 OREO PEACH 桃粉",
+      "sku": "5203109",
+      "price": "0.00"
+    },
+    {
+      "id": "150001",
+      "name": "Poled UV消毒機 SLIM 白色 3月出貨",
+      "sku": "poled_slim_WH",
+      "price": "0.00"
+    },
+    {
+      "id": "150002",
+      "name": "Poled UV消毒機 SLIM 米色 3月出貨",
+      "sku": "Poled_SLIM__BH",
+      "price": "0.00"
+    },
+    {
+      "id": "270001",
+      "name": "POLED POLED AIRLUV4 甜甜圈蛋奶凍",
+      "sku": "5201111",
+      "price": "0.00"
+    },
+    {
+      "id": "270002",
+      "name": "POLED AIRLUV4 甜甜圈純牛奶",
+      "sku": "5201108",
+      "price": "0.00"
+    },
+    {
+      "id": "270003",
+      "name": "POLED AIRLUV4 棒棒糖燕麥拿鐵",
+      "sku": "5202111",
+      "price": "0.00"
+    },
+    {
+      "id": "270004",
+      "name": "POLED AIRLUV4 棒棒糖跳跳糖",
+      "sku": "5202112",
+      "price": "0.00"
+    },
+    {
+      "id": "270005",
+      "name": "POLED AIRLUV4 甜甜圈雪藍色",
+      "sku": "5201110",
+      "price": "0.00"
+    }
+  ],
+  "messages": [
+    "60001\tAIRLUV4 LOLLIPOP 奶白\t5202109\t\t0.00"
+  ],
+  "stdout": "id\tname\tsku\tprice\n60001\tAIRLUV4 LOLLIPOP 奶白\t5202109\t\t0.00\n60002\tAIRLUV4 OREO CREAM \t5203107\t0.00\n60003\tAIRLUV4 OREO COOKIE 灰\t5203108\t0.00\n60004\tAIRLUV4 OREO PEACH 桃粉\t5203109\t0.00\n150001\tPoled UV消毒機 SLIM 白色 3月出貨\tpoled_slim_WH\t0.00\n150002\tPoled UV消毒機 SLIM 米色 3月出貨\tPoled_SLIM__BH\t0.00\n270001\tPOLED POLED AIRLUV4 甜甜圈蛋奶凍\t5201111\t0.00\n270002\tPOLED AIRLUV4 甜甜圈純牛奶\t5201108\t0.00\n270003\tPOLED AIRLUV4 棒棒糖燕麥拿鐵\t5202111\t0.00\n270004\tPOLED AIRLUV4 棒棒糖跳跳糖\t5202112\t0.00\n270005\tPOLED AIRLUV4 甜甜圈雪藍色\t5201110\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 21746
+}

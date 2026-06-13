@@ -1,0 +1,150 @@
+{
+  "query": "\n-- 所有 SOGO JOYCE 訂單中含 UP920A-VC 的記錄（包括已完成和未完成）\nSELECT \n  o.orderNumber,\n  o.customerName,\n  o.status,\n  o.deliveryDate,\n  o.shopName,\n  op.quantity,\n  op.sku,\n  op.productName\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE (o.shopName = 'SOGO JOYCE' OR o.shopName LIKE '%sogo ktk%' OR o.shopName LIKE '%SOGO CWB JOYCE%')\n  AND op.sku = 'UP920A-VC'\nORDER BY o.deliveryDate;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \n-- 所有 SOGO JOYCE 訂單中含 UP920A-VC 的記錄（包括已完成和未完成）\nSELECT \n  o.orderNumber,\n  o.customerName,\n  o.status,\n  o.deliveryDate,\n  o.shopName,\n  op.quantity,\n  op.sku,\n  op.productName\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE (o.shopName = 'SOGO JOYCE' OR o.shopName LIKE '%sogo ktk%' OR o.shopName LIKE '%SOGO CWB JOYCE%')\n  AND op.sku = 'UP920A-VC'\nORDER BY o.deliveryDate;\n",
+  "rows": [
+    {
+      "orderNumber": "26EGB0260",
+      "customerName": "fanny",
+      "status": "delivering",
+      "deliveryDate": "2026-05-15 00:00:00",
+      "shopName": "sogo ktk",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0309",
+      "customerName": "Choi",
+      "status": "delivering",
+      "deliveryDate": "2026-05-24 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0338",
+      "customerName": "朱",
+      "status": "delivering",
+      "deliveryDate": "2026-06-03 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0285",
+      "customerName": "KELVIN",
+      "status": "delivering",
+      "deliveryDate": "2026-06-13 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0287",
+      "customerName": "YIM",
+      "status": "pending",
+      "deliveryDate": "2026-06-20 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0317",
+      "customerName": "李生",
+      "status": "pending",
+      "deliveryDate": "2026-07-04 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0283",
+      "customerName": "STEPHANIE",
+      "status": "pending",
+      "deliveryDate": "2026-07-11 00:00:00",
+      "shopName": "SOGO CWB JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0318",
+      "customerName": "Ms Chao 莊",
+      "status": "pending",
+      "deliveryDate": "2026-08-19 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0325",
+      "customerName": "何小姐/曾生",
+      "status": "pending",
+      "deliveryDate": "2026-08-24 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0319",
+      "customerName": "金生",
+      "status": "pending",
+      "deliveryDate": "2026-08-29 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0353",
+      "customerName": "SO KAWAI",
+      "status": "pending",
+      "deliveryDate": "2026-08-29 00:00:00",
+      "shopName": "sogo ktk",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0336",
+      "customerName": "WONG",
+      "status": "pending",
+      "deliveryDate": "2026-09-05 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0286",
+      "customerName": "MR CHAN",
+      "status": "pending",
+      "deliveryDate": "2026-10-02 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    },
+    {
+      "orderNumber": "26EGB0335",
+      "customerName": "Joyce",
+      "status": "pending",
+      "deliveryDate": "2026-10-14 00:00:00",
+      "shopName": "SOGO JOYCE",
+      "quantity": "1",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tstatus\tdeliveryDate\tshopName\tquantity\tsku\tproductName\n26EGB0260\tfanny\tdelivering\t2026-05-15 00:00:00\tsogo ktk\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0309\tChoi\tdelivering\t2026-05-24 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0338\t朱\tdelivering\t2026-06-03 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0285\tKELVIN\tdelivering\t2026-06-13 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0287\tYIM\tpending\t2026-06-20 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0317\t李生\tpending\t2026-07-04 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0283\tSTEPHANIE\tpending\t2026-07-11 00:00:00\tSOGO CWB JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0318\tMs Chao 莊\tpending\t2026-08-19 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0325\t何小姐/曾生\tpending\t2026-08-24 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0319\t金生\tpending\t2026-08-29 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0353\tSO KAWAI\tpending\t2026-08-29 00:00:00\tsogo ktk\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0336\tWONG\tpending\t2026-09-05 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0286\tMR CHAN\tpending\t2026-10-02 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n26EGB0335\tJoyce\tpending\t2026-10-14 00:00:00\tSOGO JOYCE\t1\tUP920A-VC\tUP920 奶油白色\n",
+  "stderr": "",
+  "execution_time_ms": 1809
+}

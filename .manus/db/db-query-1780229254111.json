@@ -1,0 +1,9 @@
+{
+  "query": "-- Update order: delivery date 2/6/2026, notes updated\nUPDATE orders SET \n  deliveryDate = '2026-06-02',\n  orderAmount = 2988.00,\n  notes = 'SOGO CWB Annie / eufy S1 Pro 吸奶器（已自取）/ 贈品：盛奶杯、奶袋（送貨）'\nWHERE orderNumber = '26EGB0334';\n\n-- Remove old products and re-insert correctly\nDELETE FROM orderProducts WHERE orderId = 2340001;\n\nINSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice, isGift)\nVALUES \n  (2340001, NULL, 'EUFY-S1PRO', 'eufy S1 Pro 吸奶器', '粉色', 1, 2988.00, 'no'),\n  (2340001, NULL, 'MILK-CUP', '盛奶杯', '', 1, 0.00, 'yes'),\n  (2340001, NULL, 'MILK-BAG', '母乳儲存袋', '', 1, 0.00, 'yes');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute -- Update order: delivery date 2/6/2026, notes updated\nUPDATE orders SET \n  deliveryDate = '2026-06-02',\n  orderAmount = 2988.00,\n  notes = 'SOGO CWB Annie / eufy S1 Pro 吸奶器（已自取）/ 贈品：盛奶杯、奶袋（送貨）'\nWHERE orderNumber = '26EGB0334';\n\n-- Remove old products and re-insert correctly\nDELETE FROM orderProducts WHERE orderId = 2340001;\n\nINSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice, isGift)\nVALUES \n  (2340001, NULL, 'EUFY-S1PRO', 'eufy S1 Pro 吸奶器', '粉色', 1, 2988.00, 'no'),\n  (2340001, NULL, 'MILK-CUP', '盛奶杯', '', 1, 0.00, 'yes'),\n  (2340001, NULL, 'MILK-BAG', '母乳儲存袋', '', 1, 0.00, 'yes');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 4332
+}

@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, paymentStatus, shopName, orderDate)\nVALUES ('26EGB0345', 'Kaven Chan', '6689 5737', 1, '其他｜單件產品購買', 2630.00, 0.00, 'RM24F Tower 4 Kingston Terrace, King Sun Path, Tuen Mun', NULL, 'pending', 'ReadyGo HK 網店 / 原單號: SFFRILXSR / Email: kaven04027@gmail.com / UP920 奶白', 'paid', 'ReadyGo HK', '2026-06-03');\n\nSELECT id FROM orders WHERE orderNumber = '26EGB0345';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, paymentStatus, shopName, orderDate)\nVALUES ('26EGB0345', 'Kaven Chan', '6689 5737', 1, '其他｜單件產品購買', 2630.00, 0.00, 'RM24F Tower 4 Kingston Terrace, King Sun Path, Tuen Mun', NULL, 'pending', 'ReadyGo HK 網店 / 原單號: SFFRILXSR / Email: kaven04027@gmail.com / UP920 奶白', 'paid', 'ReadyGo HK', '2026-06-03');\n\nSELECT id FROM orders WHERE orderNumber = '26EGB0345';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'orderDate' in 'field list'"
+  ]
+}

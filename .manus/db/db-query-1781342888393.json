@@ -1,0 +1,90 @@
+{
+  "query": "\n-- 查看 shops 表現有記錄\nSELECT id, name FROM shops ORDER BY id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \n-- 查看 shops 表現有記錄\nSELECT id, name FROM shops ORDER BY id;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "ReadyGo HK"
+    },
+    {
+      "id": "2",
+      "name": "Poled HK"
+    },
+    {
+      "id": "3",
+      "name": "Upang HK"
+    },
+    {
+      "id": "4",
+      "name": "Shnuggle HK"
+    },
+    {
+      "id": "5",
+      "name": "Baby Brezza HK"
+    },
+    {
+      "id": "6",
+      "name": "奧創數碼有限公司"
+    },
+    {
+      "id": "60001",
+      "name": "Mother Court Limited"
+    },
+    {
+      "id": "90001",
+      "name": "EUGENE GROUP"
+    },
+    {
+      "id": "120001",
+      "name": "中原電器行有限公司"
+    },
+    {
+      "id": "150001",
+      "name": "內地庫存"
+    },
+    {
+      "id": "180001",
+      "name": "香港母嬰護理教育服務有限公司"
+    },
+    {
+      "id": "210001",
+      "name": "SOGO CWB"
+    },
+    {
+      "id": "210002",
+      "name": "SOGO KTK"
+    },
+    {
+      "id": "210003",
+      "name": "SOGO JOYCE"
+    },
+    {
+      "id": "210004",
+      "name": "SOGO ANNIE"
+    },
+    {
+      "id": "240001",
+      "name": "天恩陪月集團（國際）有限公司"
+    },
+    {
+      "id": "270001",
+      "name": "Test Shop 1778047835289"
+    },
+    {
+      "id": "270003",
+      "name": "Test Shop 2 1778047836877"
+    },
+    {
+      "id": "300002",
+      "name": "Test Shop 1778135176686"
+    },
+    {
+      "id": "300003",
+      "name": "Test Shop 2 1778135178329"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n1\tReadyGo HK\n2\tPoled HK\n3\tUpang HK\n4\tShnuggle HK\n5\tBaby Brezza HK\n6\t奧創數碼有限公司\n60001\tMother Court Limited\n90001\tEUGENE GROUP\n120001\t中原電器行有限公司\n150001\t內地庫存\n180001\t香港母嬰護理教育服務有限公司\n210001\tSOGO CWB\n210002\tSOGO KTK\n210003\tSOGO JOYCE\n210004\tSOGO ANNIE\n240001\t天恩陪月集團（國際）有限公司\n270001\tTest Shop 1778047835289\n270003\tTest Shop 2 1778047836877\n300002\tTest Shop 1778135176686\n300003\tTest Shop 2 1778135178329\n",
+  "stderr": "",
+  "execution_time_ms": 1784
+}

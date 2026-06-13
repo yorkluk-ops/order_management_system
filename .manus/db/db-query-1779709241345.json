@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES \n('26EGB0323', 'Mr. Ng', '90719042', 1, '其他｜單件產品購買', 966.00, 0.00, 'Flat D, 20/F, Hing Yip Building, 19 Clearwater Bay Road, HK', '2026-05-27 00:00:00', 'pending', 'SOGO Kai Tak收據: S047000037610 / 店舖KTK-047', 1, 'SOGO JOYCE', 'unpaid', 0.00);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES \n('26EGB0323', 'Mr. Ng', '90719042', 1, '其他｜單件產品購買', 966.00, 0.00, 'Flat D, 20/F, Hing Yip Building, 19 Clearwater Bay Road, HK', '2026-05-27 00:00:00', 'pending', 'SOGO Kai Tak收據: S047000037610 / 店舖KTK-047', 1, 'SOGO JOYCE', 'unpaid', 0.00);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1834
+}

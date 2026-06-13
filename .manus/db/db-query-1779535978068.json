@@ -1,0 +1,35 @@
+{
+  "query": "SELECT * FROM orders ORDER BY id DESC LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT * FROM orders ORDER BY id DESC LIMIT 1;",
+  "rows": [
+    {
+      "id": "1980002",
+      "orderNumber": "26EGB0307",
+      "customerName": "門市自取 ",
+      "customerPhone": "00",
+      "customerEmail": "NULL",
+      "packageId": "1",
+      "packageName": "其他｜單件產品購買",
+      "packageVariant": "NULL",
+      "orderAmount": "3288.00",
+      "commission": "0.00",
+      "deliveryAddress": "SOGO CWB 自取",
+      "deliveryDate": "2026-05-22 00:00:00",
+      "deliveryTimeSlot": "NULL",
+      "status": "completed",
+      "notes": "S122001008718",
+      "createdAt": "2026-05-22 07:32:48",
+      "updatedAt": "2026-05-22 07:36:52",
+      "createdBy": "1",
+      "trackingNumber": "NULL",
+      "paymentStatus": "unpaid",
+      "paidAmount": "0.00",
+      "customerId": "NULL",
+      "shopName": "SOGO ANNIE"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\tcustomerPhone\tcustomerEmail\tpackageId\tpackageName\tpackageVariant\torderAmount\tcommission\tdeliveryAddress\tdeliveryDate\tdeliveryTimeSlot\tstatus\tnotes\tcreatedAt\tupdatedAt\tcreatedBy\ttrackingNumber\tpaymentStatus\tpaidAmount\tcustomerId\tshopName\n1980002\t26EGB0307\t門市自取 \t00\tNULL\t1\t其他｜單件產品購買\tNULL\t3288.00\t0.00\tSOGO CWB 自取\t2026-05-22 00:00:00\tNULL\tcompleted\tS122001008718\t2026-05-22 07:32:48\t2026-05-22 07:36:52\t1\tNULL\tunpaid\t0.00\tNULL\tSOGO ANNIE\n",
+  "stderr": "",
+  "execution_time_ms": 1754
+}

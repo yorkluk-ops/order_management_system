@@ -1,0 +1,35 @@
+{
+  "query": "SELECT * FROM orders WHERE orderNumber = '26EGB0345' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT * FROM orders WHERE orderNumber = '26EGB0345' LIMIT 1;",
+  "rows": [
+    {
+      "id": "2580001",
+      "orderNumber": "26EGB0345",
+      "customerName": "Kaven Chan",
+      "customerPhone": "6689 5737",
+      "customerEmail": "NULL",
+      "packageId": "1",
+      "packageName": "其他｜單件產品購買",
+      "packageVariant": "NULL",
+      "orderAmount": "2630.00",
+      "commission": "0.00",
+      "deliveryAddress": "RM24F Tower 4 Kingston Terrace, King Sun Path, Tuen Mun",
+      "deliveryDate": "2026-06-05 00:00:00",
+      "deliveryTimeSlot": "NULL",
+      "status": "delivering",
+      "notes": "ReadyGo HK 網店 / 原單號: SFFRILXSR / 訂單日期: 2026-06-03 / Email: kaven04027@gmail.com / UP920 奶白",
+      "createdAt": "2026-06-04 05:37:57",
+      "updatedAt": "2026-06-05 05:34:34",
+      "createdBy": "NULL",
+      "trackingNumber": "JDX054875540280",
+      "paymentStatus": "paid",
+      "paidAmount": "0.00",
+      "customerId": "NULL",
+      "shopName": "中原電器行有限公司"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\tcustomerPhone\tcustomerEmail\tpackageId\tpackageName\tpackageVariant\torderAmount\tcommission\tdeliveryAddress\tdeliveryDate\tdeliveryTimeSlot\tstatus\tnotes\tcreatedAt\tupdatedAt\tcreatedBy\ttrackingNumber\tpaymentStatus\tpaidAmount\tcustomerId\tshopName\n2580001\t26EGB0345\tKaven Chan\t6689 5737\tNULL\t1\t其他｜單件產品購買\tNULL\t2630.00\t0.00\tRM24F Tower 4 Kingston Terrace, King Sun Path, Tuen Mun\t2026-06-05 00:00:00\tNULL\tdelivering\tReadyGo HK 網店 / 原單號: SFFRILXSR / 訂單日期: 2026-06-03 / Email: kaven04027@gmail.com / UP920 奶白\t2026-06-04 05:37:57\t2026-06-05 05:34:34\tNULL\tJDX054875540280\tpaid\t0.00\tNULL\t中原電器行有限公司\n",
+  "stderr": "",
+  "execution_time_ms": 1794
+}

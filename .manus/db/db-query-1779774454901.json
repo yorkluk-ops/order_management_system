@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES \n('26EGB0329', 'Ms Man', '90131023', 1, '其他｜單件產品購買', 3288.00, 0.00, 'Flat A, 13/F, Scenic Horizon, 250 Shau Kei Wan Road, Shau Kei Wan, Hong Kong', '2026-07-18 00:00:00', 'pending', 'SOGO CWB收據: S117000832967 / 店舖CWB-117 / 贈品: 體溫計/送貨 / 組合: 鋼杯', 1, 'SOGO ANNIE', 'unpaid', 0.00);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES \n('26EGB0329', 'Ms Man', '90131023', 1, '其他｜單件產品購買', 3288.00, 0.00, 'Flat A, 13/F, Scenic Horizon, 250 Shau Kei Wan Road, Shau Kei Wan, Hong Kong', '2026-07-18 00:00:00', 'pending', 'SOGO CWB收據: S117000832967 / 店舖CWB-117 / 贈品: 體溫計/送貨 / 組合: 鋼杯', 1, 'SOGO ANNIE', 'unpaid', 0.00);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1939
+}

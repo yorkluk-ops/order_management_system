@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Fix 26EGB0344: UP920PLUS-BP x5 and UP920PLUS-BB x5, each $2,899\nUPDATE orderProducts SET unitPrice = 2899 WHERE orderId = (SELECT id FROM orders WHERE orderNumber = '26EGB0344');\n\n-- Fix 26EGB0353: UP920 奶油白色 x1, $2,888\nUPDATE orderProducts SET unitPrice = 2888 WHERE orderId = (SELECT id FROM orders WHERE orderNumber = '26EGB0353');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \n-- Fix 26EGB0344: UP920PLUS-BP x5 and UP920PLUS-BB x5, each $2,899\nUPDATE orderProducts SET unitPrice = 2899 WHERE orderId = (SELECT id FROM orders WHERE orderNumber = '26EGB0344');\n\n-- Fix 26EGB0353: UP920 奶油白色 x1, $2,888\nUPDATE orderProducts SET unitPrice = 2888 WHERE orderId = (SELECT id FROM orders WHERE orderNumber = '26EGB0353');\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2075
+}

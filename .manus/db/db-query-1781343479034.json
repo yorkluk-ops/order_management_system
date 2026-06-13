@@ -1,0 +1,17 @@
+{
+  "query": "\nSELECT \n  o.shopName,\n  op.sku,\n  op.productName,\n  op.color,\n  SUM(op.quantity) as totalQty\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%' OR op.sku LIKE '%UP920%' OR op.sku LIKE '%UP911%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\n  AND o.deliveryDate > '2026-06-16'\nGROUP BY o.shopName, op.sku, op.productName, op.color\nORDER BY o.shopName, op.sku\nLIMIT 5 OFFSET 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT \n  o.shopName,\n  op.sku,\n  op.productName,\n  op.color,\n  SUM(op.quantity) as totalQty\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%' OR op.sku LIKE '%UP920%' OR op.sku LIKE '%UP911%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\n  AND o.deliveryDate > '2026-06-16'\nGROUP BY o.shopName, op.sku, op.productName, op.color\nORDER BY o.shopName, op.sku\nLIMIT 5 OFFSET 20;\n",
+  "rows": [
+    {
+      "shopName": "中原電器行有限公司",
+      "sku": "UP920A-VC",
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "totalQty": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "shopName\tsku\tproductName\tcolor\ttotalQty\n中原電器行有限公司\tUP920A-VC\tUP920 奶油白色\t奶油白色\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1753
+}

@@ -1,0 +1,41 @@
+{
+  "query": "SHOW CREATE TABLE orders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SHOW CREATE TABLE orders;",
+  "rows": [
+    {
+      "Table": "orders",
+      "Create Table": "CREATE TABLE `orders` ("
+    }
+  ],
+  "messages": [
+    "  `id` int NOT NULL AUTO_INCREMENT,",
+    "  `orderNumber` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,",
+    "  `customerName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,",
+    "  `customerPhone` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,",
+    "  `customerEmail` varchar(320) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `packageId` int NOT NULL,",
+    "  `packageName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,",
+    "  `packageVariant` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `orderAmount` decimal(10,2) NOT NULL,",
+    "  `commission` decimal(10,2) NOT NULL,",
+    "  `deliveryAddress` text COLLATE utf8mb4_unicode_ci NOT NULL,",
+    "  `deliveryDate` timestamp NULL DEFAULT NULL,",
+    "  `deliveryTimeSlot` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `status` enum('pending','confirmed','delivering','completed','cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',",
+    "  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  `createdBy` int DEFAULT NULL,",
+    "  `trackingNumber` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `paymentStatus` enum('unpaid','partial','paid') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unpaid',",
+    "  `paidAmount` decimal(10,2) NOT NULL DEFAULT '0',",
+    "  `customerId` int DEFAULT NULL,",
+    "  `shopName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ReadyGo HK',",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,",
+    "  UNIQUE KEY `orders_orderNumber_unique` (`orderNumber`)",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=2010001"
+  ],
+  "stdout": "Table\tCreate Table\norders\tCREATE TABLE `orders` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `orderNumber` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `customerName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `customerPhone` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `customerEmail` varchar(320) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `packageId` int NOT NULL,\n  `packageName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `packageVariant` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `orderAmount` decimal(10,2) NOT NULL,\n  `commission` decimal(10,2) NOT NULL,\n  `deliveryAddress` text COLLATE utf8mb4_unicode_ci NOT NULL,\n  `deliveryDate` timestamp NULL DEFAULT NULL,\n  `deliveryTimeSlot` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `status` enum('pending','confirmed','delivering','completed','cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',\n  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `createdBy` int DEFAULT NULL,\n  `trackingNumber` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `paymentStatus` enum('unpaid','partial','paid') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unpaid',\n  `paidAmount` decimal(10,2) NOT NULL DEFAULT '0',\n  `customerId` int DEFAULT NULL,\n  `shopName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ReadyGo HK',\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  UNIQUE KEY `orders_orderNumber_unique` (`orderNumber`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=2010001\n",
+  "stderr": "",
+  "execution_time_ms": 1732
+}

@@ -1,0 +1,14 @@
+{
+  "query": "\n-- 查 SOGO JOYCE 的 shopId\nSELECT id, name FROM shops WHERE name LIKE '%JOYCE%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \n-- 查 SOGO JOYCE 的 shopId\nSELECT id, name FROM shops WHERE name LIKE '%JOYCE%';\n",
+  "rows": [
+    {
+      "id": "210003",
+      "name": "SOGO JOYCE"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n210003\tSOGO JOYCE\n",
+  "stderr": "",
+  "execution_time_ms": 1808
+}

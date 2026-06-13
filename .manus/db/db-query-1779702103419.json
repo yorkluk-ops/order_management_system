@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE orders SET customerName = '潘小姐', deliveryDate = '2026-11-02 00:00:00' WHERE id = 2100001;\nUPDATE orders SET deliveryDate = '2026-07-11 00:00:00' WHERE id = 2100002;\nUPDATE orders SET deliveryDate = '2026-09-12 00:00:00' WHERE id = 2100003;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute UPDATE orders SET customerName = '潘小姐', deliveryDate = '2026-11-02 00:00:00' WHERE id = 2100001;\nUPDATE orders SET deliveryDate = '2026-07-11 00:00:00' WHERE id = 2100002;\nUPDATE orders SET deliveryDate = '2026-09-12 00:00:00' WHERE id = 2100003;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3996
+}

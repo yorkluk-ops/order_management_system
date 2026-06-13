@@ -1,0 +1,118 @@
+{
+  "query": "SELECT \n  MONTH(o.deliveryDate) as delivery_month,\n  op.productName,\n  op.color,\n  SUM(op.quantity) as total_qty\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE o.deliveryDate >= '2026-06-01' AND o.deliveryDate < '2026-09-01'\nAND o.status != 'cancelled'\nAND (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%')\nGROUP BY MONTH(o.deliveryDate), op.productName, op.color\nORDER BY MONTH(o.deliveryDate), op.productName, op.color;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT \n  MONTH(o.deliveryDate) as delivery_month,\n  op.productName,\n  op.color,\n  SUM(op.quantity) as total_qty\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE o.deliveryDate >= '2026-06-01' AND o.deliveryDate < '2026-09-01'\nAND o.status != 'cancelled'\nAND (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%')\nGROUP BY MONTH(o.deliveryDate), op.productName, op.color\nORDER BY MONTH(o.deliveryDate), op.productName, op.color;",
+  "rows": [
+    {
+      "delivery_month": "6",
+      "productName": "UP911 白色",
+      "color": "白色",
+      "total_qty": "4"
+    },
+    {
+      "delivery_month": "6",
+      "productName": "UP911 綠色",
+      "color": "綠色",
+      "total_qty": "1"
+    },
+    {
+      "delivery_month": "6",
+      "productName": "UP911 藍色",
+      "color": "藍色",
+      "total_qty": "1"
+    },
+    {
+      "delivery_month": "6",
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "total_qty": "11"
+    },
+    {
+      "delivery_month": "6",
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "total_qty": "14"
+    },
+    {
+      "delivery_month": "6",
+      "productName": "UPANG UP920 PLUS 寶貝藍",
+      "color": "藍色",
+      "total_qty": "1"
+    },
+    {
+      "delivery_month": "6",
+      "productName": "UPANG UP920PLUS 粉紅色",
+      "color": "粉紅色",
+      "total_qty": "1"
+    },
+    {
+      "delivery_month": "7",
+      "productName": "UP911 灰色",
+      "color": "灰色",
+      "total_qty": "1"
+    },
+    {
+      "delivery_month": "7",
+      "productName": "UP911 綠色",
+      "color": "綠色",
+      "total_qty": "1"
+    },
+    {
+      "delivery_month": "7",
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "total_qty": "6"
+    },
+    {
+      "delivery_month": "7",
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "total_qty": "4"
+    },
+    {
+      "delivery_month": "7",
+      "productName": "UPANG UP920 PLUS 寶貝藍",
+      "color": "寶貝藍",
+      "total_qty": "2"
+    },
+    {
+      "delivery_month": "7",
+      "productName": "UPANG UP920PLUS 粉紅色",
+      "color": "粉紅色",
+      "total_qty": "1"
+    },
+    {
+      "delivery_month": "7",
+      "productName": "UPANG UP920PLUS-BP 粉紅色",
+      "color": "粉紅色",
+      "total_qty": "1"
+    },
+    {
+      "delivery_month": "8",
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "total_qty": "7"
+    },
+    {
+      "delivery_month": "8",
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "total_qty": "2"
+    },
+    {
+      "delivery_month": "8",
+      "productName": "UPANG UP920 PLUS 寶貝藍",
+      "color": "寶貝藍",
+      "total_qty": "2"
+    },
+    {
+      "delivery_month": "8",
+      "productName": "UPANG UP920PLUS 粉紅色",
+      "color": "粉紅色",
+      "total_qty": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "delivery_month\tproductName\tcolor\ttotal_qty\n6\tUP911 白色\t白色\t4\n6\tUP911 綠色\t綠色\t1\n6\tUP911 藍色\t藍色\t1\n6\tUP920 奶油白色\t奶油白色\t11\n6\tUP920 淺灰色\t淺灰色\t14\n6\tUPANG UP920 PLUS 寶貝藍\t藍色\t1\n6\tUPANG UP920PLUS 粉紅色\t粉紅色\t1\n7\tUP911 灰色\t灰色\t1\n7\tUP911 綠色\t綠色\t1\n7\tUP920 奶油白色\t奶油白色\t6\n7\tUP920 淺灰色\t淺灰色\t4\n7\tUPANG UP920 PLUS 寶貝藍\t寶貝藍\t2\n7\tUPANG UP920PLUS 粉紅色\t粉紅色\t1\n7\tUPANG UP920PLUS-BP 粉紅色\t粉紅色\t1\n8\tUP920 奶油白色\t奶油白色\t7\n8\tUP920 淺灰色\t淺灰色\t2\n8\tUPANG UP920 PLUS 寶貝藍\t寶貝藍\t2\n8\tUPANG UP920PLUS 粉紅色\t粉紅色\t1\n",
+  "stderr": "",
+  "execution_time_ms": 4857
+}

@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES ('26EGB0313', 'David', '68024960', 1, '其他｜單件產品購買', 2888.00, 0.00, '23A, Fairlane Tower, 2B Bowen Road, Mid-Levels, Hong Kong', '2026-08-22 00:00:00', 'pending', 'SOGO CWB收據: S119000077523', 1, 'SOGO ANNIE', 'unpaid', 0.00);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES ('26EGB0313', 'David', '68024960', 1, '其他｜單件產品購買', 2888.00, 0.00, '23A, Fairlane Tower, 2B Bowen Road, Mid-Levels, Hong Kong', '2026-08-22 00:00:00', 'pending', 'SOGO CWB收據: S119000077523', 1, 'SOGO ANNIE', 'unpaid', 0.00);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1781
+}

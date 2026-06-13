@@ -1,0 +1,9 @@
+{
+  "query": "-- Update delivery date and notes\nUPDATE orders SET \n  deliveryDate = '2026-07-25',\n  notes = 'SOGO CWB Annie / UP920 (粉紅色) / 贈品：UPANG支架(送貨)、GOING BEAR包淺灰色'\nWHERE orderNumber = '26EGB0333';\n\n-- Update main product colour\nUPDATE orderProducts SET \n  sku = 'UP920-PK',\n  productName = 'UP920 粉紅色',\n  color = '粉紅色'\nWHERE orderId = 2310001 AND isGift = 'no';\n\n-- Add gift items\nINSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice, isGift)\nVALUES \n  (2310001, NULL, 'STAND-BK', 'UPANG 站立支架', '黑色', 1, 0.00, 'yes'),\n  (2310001, NULL, 'GOINGBEAR-LG', 'GOING BEAR 包', '淺灰色', 1, 0.00, 'yes');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute -- Update delivery date and notes\nUPDATE orders SET \n  deliveryDate = '2026-07-25',\n  notes = 'SOGO CWB Annie / UP920 (粉紅色) / 贈品：UPANG支架(送貨)、GOING BEAR包淺灰色'\nWHERE orderNumber = '26EGB0333';\n\n-- Update main product colour\nUPDATE orderProducts SET \n  sku = 'UP920-PK',\n  productName = 'UP920 粉紅色',\n  color = '粉紅色'\nWHERE orderId = 2310001 AND isGift = 'no';\n\n-- Add gift items\nINSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice, isGift)\nVALUES \n  (2310001, NULL, 'STAND-BK', 'UPANG 站立支架', '黑色', 1, 0.00, 'yes'),\n  (2310001, NULL, 'GOINGBEAR-LG', 'GOING BEAR 包', '淺灰色', 1, 0.00, 'yes');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2163
+}

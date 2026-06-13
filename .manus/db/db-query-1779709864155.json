@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice) VALUES \n(2160001, 390001, 'UP920PLUS-BP', 'UPANG UP920PLUS 粉紅色', '粉紅色', 1, 2888.00);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice) VALUES \n(2160001, 390001, 'UP920PLUS-BP', 'UPANG UP920PLUS 粉紅色', '粉紅色', 1, 2888.00);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1754
+}

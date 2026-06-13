@@ -1,0 +1,15 @@
+{
+  "query": "\n-- SOGO JOYCE (shopId=210003) 的 UP920A-VC (productId=30003) 庫存\nSELECT si.quantity, p.name as productName, p.sku\nFROM shopInventory si\nJOIN products p ON si.productId = p.id\nWHERE si.shopId = 210003 AND p.sku = 'UP920A-VC';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \n-- SOGO JOYCE (shopId=210003) 的 UP920A-VC (productId=30003) 庫存\nSELECT si.quantity, p.name as productName, p.sku\nFROM shopInventory si\nJOIN products p ON si.productId = p.id\nWHERE si.shopId = 210003 AND p.sku = 'UP920A-VC';\n",
+  "rows": [
+    {
+      "quantity": "-4",
+      "productName": "UP920 奶油白色",
+      "sku": "UP920A-VC"
+    }
+  ],
+  "messages": [],
+  "stdout": "quantity\tproductName\tsku\n-4\tUP920 奶油白色\tUP920A-VC\n",
+  "stderr": "",
+  "execution_time_ms": 1843
+}

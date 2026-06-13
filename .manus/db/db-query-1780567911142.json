@@ -1,0 +1,50 @@
+{
+  "query": "SELECT \n  op.productName,\n  op.color,\n  COUNT(*) as qty\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE o.deliveryDate BETWEEN '2026-06-06' AND '2026-06-13'\n  AND op.isGift = 'no'\n  AND (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%')\nGROUP BY op.productName, op.color\nORDER BY op.productName, op.color;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT \n  op.productName,\n  op.color,\n  COUNT(*) as qty\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE o.deliveryDate BETWEEN '2026-06-06' AND '2026-06-13'\n  AND op.isGift = 'no'\n  AND (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%')\nGROUP BY op.productName, op.color\nORDER BY op.productName, op.color;",
+  "rows": [
+    {
+      "productName": "UP911 白色",
+      "color": "白色",
+      "qty": "2"
+    },
+    {
+      "productName": "UP911 綠色",
+      "color": "綠色",
+      "qty": "1"
+    },
+    {
+      "productName": "UP911 藍色",
+      "color": "藍色",
+      "qty": "1"
+    },
+    {
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "qty": "2"
+    },
+    {
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "qty": "4"
+    },
+    {
+      "productName": "UPANG UP920 PLUS 寶貝藍",
+      "color": "寶貝藍",
+      "qty": "1"
+    },
+    {
+      "productName": "UPANG UP920PLUS 粉紅色",
+      "color": "粉紅色",
+      "qty": "1"
+    },
+    {
+      "productName": "UPANG UP920PLUS-BP 粉紅色",
+      "color": "粉紅色",
+      "qty": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "productName\tcolor\tqty\nUP911 白色\t白色\t2\nUP911 綠色\t綠色\t1\nUP911 藍色\t藍色\t1\nUP920 奶油白色\t奶油白色\t2\nUP920 淺灰色\t淺灰色\t4\nUPANG UP920 PLUS 寶貝藍\t寶貝藍\t1\nUPANG UP920PLUS 粉紅色\t粉紅色\t1\nUPANG UP920PLUS-BP 粉紅色\t粉紅色\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1774
+}

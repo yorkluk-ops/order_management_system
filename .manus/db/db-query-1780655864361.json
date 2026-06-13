@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, customerEmail, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, shopName, paymentStatus, paidAmount)\nVALUES (\n  '26EGB0348',\n  'Karen Li',\n  '9517 9464',\n  'macrossgundam@yahoo.com.hk',\n  1,\n  '其他｜單件產品購買',\n  2630.00,\n  0.00,\n  '荃灣愉景新城6座35樓F室',\n  '2026-07-30',\n  'pending',\n  '中原電器 / 原單號: TNNJDQZSD / 訂單日期: 2026-06-05 / 客人要求盡量安排30/7送貨（家居裝修）',\n  '中原電器行有限公司',\n  'unpaid',\n  0.00\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, customerEmail, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, shopName, paymentStatus, paidAmount)\nVALUES (\n  '26EGB0348',\n  'Karen Li',\n  '9517 9464',\n  'macrossgundam@yahoo.com.hk',\n  1,\n  '其他｜單件產品購買',\n  2630.00,\n  0.00,\n  '荃灣愉景新城6座35樓F室',\n  '2026-07-30',\n  'pending',\n  '中原電器 / 原單號: TNNJDQZSD / 訂單日期: 2026-06-05 / 客人要求盡量安排30/7送貨（家居裝修）',\n  '中原電器行有限公司',\n  'unpaid',\n  0.00\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1824
+}

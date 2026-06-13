@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE orders SET \n  customerName = '余先生',\n  customerPhone = '6651 7036',\n  deliveryAddress = 'Rm 217, Prosperity Industrial Building, 89 Wai Yip St., Kwun Tong'\nWHERE orderNumber = '26EGB0334';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute UPDATE orders SET \n  customerName = '余先生',\n  customerPhone = '6651 7036',\n  deliveryAddress = 'Rm 217, Prosperity Industrial Building, 89 Wai Yip St., Kwun Tong'\nWHERE orderNumber = '26EGB0334';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2154
+}

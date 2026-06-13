@@ -1,0 +1,14 @@
+{
+  "query": "\nSELECT COUNT(*) as total_pending,\n  SUM(op.quantity) as total_units\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE (op.productName LIKE '%eufy%S1%Pro%' OR op.productName LIKE '%S1 Pro%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\n  AND (o.deliveryDate IS NULL OR o.deliveryDate > '2026-06-10 23:59:59');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT COUNT(*) as total_pending,\n  SUM(op.quantity) as total_units\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE (op.productName LIKE '%eufy%S1%Pro%' OR op.productName LIKE '%S1 Pro%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\n  AND (o.deliveryDate IS NULL OR o.deliveryDate > '2026-06-10 23:59:59');\n",
+  "rows": [
+    {
+      "total_pending": "11",
+      "total_units": "11"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_pending\ttotal_units\n11\t11\n",
+  "stderr": "",
+  "execution_time_ms": 1783
+}

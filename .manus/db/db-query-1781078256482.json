@@ -1,0 +1,450 @@
+{
+  "query": "\nSELECT o.orderNumber, o.customerName, o.deliveryDate, op.productName, op.color, op.quantity\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE (op.productName LIKE '%eufy%S1%Pro%' OR op.productName LIKE '%S1 Pro%' OR op.sku LIKE '%S1%Pro%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\nORDER BY o.deliveryDate ASC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT o.orderNumber, o.customerName, o.deliveryDate, op.productName, op.color, op.quantity\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE (op.productName LIKE '%eufy%S1%Pro%' OR op.productName LIKE '%S1 Pro%' OR op.sku LIKE '%S1%Pro%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\nORDER BY o.deliveryDate ASC;\n",
+  "rows": [
+    {
+      "orderNumber": "26EGB0032",
+      "customerName": "TIFFANY",
+      "deliveryDate": "2026-02-07 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0047",
+      "customerName": "wong 欠S1 PRO",
+      "deliveryDate": "2026-02-11 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0061",
+      "customerName": "花莉蕾 欠eufy S1 Pro 吸奶器",
+      "deliveryDate": "2026-02-11 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0177",
+      "customerName": "張耐雪",
+      "deliveryDate": "2026-02-11 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0146",
+      "customerName": "jessie fung",
+      "deliveryDate": "2026-02-24 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0215",
+      "customerName": "ms wong",
+      "deliveryDate": "2026-03-01 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0121",
+      "customerName": "伍先生",
+      "deliveryDate": "2026-03-04 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0072",
+      "customerName": "徐淑媚",
+      "deliveryDate": "2026-03-04 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0074",
+      "customerName": "鐘太",
+      "deliveryDate": "2026-03-13 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0103",
+      "customerName": "黃",
+      "deliveryDate": "2026-03-21 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0258",
+      "customerName": "RHA",
+      "deliveryDate": "2026-03-23 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0192",
+      "customerName": "鍾太",
+      "deliveryDate": "2026-03-28 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0214",
+      "customerName": "甄小姐",
+      "deliveryDate": "2026-03-28 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0046",
+      "customerName": "ip yee man",
+      "deliveryDate": "2026-04-01 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0099",
+      "customerName": "kwong",
+      "deliveryDate": "2026-04-04 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0112",
+      "customerName": "林小姐",
+      "deliveryDate": "2026-04-11 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0135",
+      "customerName": "林生",
+      "deliveryDate": "2026-04-11 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0058",
+      "customerName": "yau ",
+      "deliveryDate": "2026-04-11 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0164",
+      "customerName": "盧先生",
+      "deliveryDate": "2026-04-15 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0141",
+      "customerName": "cheung tsz hiu",
+      "deliveryDate": "2026-04-20 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0171",
+      "customerName": "lau",
+      "deliveryDate": "2026-04-28 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0117",
+      "customerName": "靜怡",
+      "deliveryDate": "2026-05-02 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0161",
+      "customerName": "jason lam",
+      "deliveryDate": "2026-05-02 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0173",
+      "customerName": "MISS.NG",
+      "deliveryDate": "2026-05-02 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0091",
+      "customerName": "何生",
+      "deliveryDate": "2026-05-04 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0153",
+      "customerName": "vianna yu",
+      "deliveryDate": "2026-05-12 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0193",
+      "customerName": "江慧盈",
+      "deliveryDate": "2026-05-16 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0154",
+      "customerName": "wan tsz fung",
+      "deliveryDate": "2026-05-16 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0179",
+      "customerName": "teddy suo",
+      "deliveryDate": "2026-05-16 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0101",
+      "customerName": "mr chow",
+      "deliveryDate": "2026-05-16 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0304",
+      "customerName": "LAU",
+      "deliveryDate": "2026-05-21 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0228",
+      "customerName": "YAN CHAN",
+      "deliveryDate": "2026-05-23 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0031",
+      "customerName": "CHAN",
+      "deliveryDate": "2026-05-26 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0183",
+      "customerName": "何先生",
+      "deliveryDate": "2026-05-26 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0147",
+      "customerName": "jess",
+      "deliveryDate": "2026-05-26 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0095",
+      "customerName": "Tracy Lau ",
+      "deliveryDate": "2026-05-30 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0063",
+      "customerName": "mabel ng",
+      "deliveryDate": "2026-06-01 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0136",
+      "customerName": "sandra lee",
+      "deliveryDate": "2026-06-01 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0190",
+      "customerName": "陳裕丰",
+      "deliveryDate": "2026-06-01 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0340",
+      "customerName": "余生",
+      "deliveryDate": "2026-06-02 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0110",
+      "customerName": "謝小姐",
+      "deliveryDate": "2026-06-03 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0235",
+      "customerName": "鄭生",
+      "deliveryDate": "2026-06-04 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0100",
+      "customerName": "chan",
+      "deliveryDate": "2026-06-06 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0196",
+      "customerName": "HO MAN FUNG",
+      "deliveryDate": "2026-06-06 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0298",
+      "customerName": "小姐 ",
+      "deliveryDate": "2026-06-12 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0055",
+      "customerName": "joey siu",
+      "deliveryDate": "2026-06-14 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0170",
+      "customerName": "chung",
+      "deliveryDate": "2026-06-20 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0219",
+      "customerName": "LEE",
+      "deliveryDate": "2026-06-20 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0035",
+      "customerName": "NG",
+      "deliveryDate": "2026-06-30 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0057",
+      "customerName": "楊小姐",
+      "deliveryDate": "2026-07-02 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0056",
+      "customerName": "katy chan",
+      "deliveryDate": "2026-07-15 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0142",
+      "customerName": "楊",
+      "deliveryDate": "2026-07-18 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0078",
+      "customerName": "choi chung ki",
+      "deliveryDate": "2026-08-01 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0220",
+      "customerName": "LEE CHOW KIT",
+      "deliveryDate": "2026-08-01 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    },
+    {
+      "orderNumber": "26EGB0339",
+      "customerName": "YAU",
+      "deliveryDate": "2026-08-03 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "quantity": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tdeliveryDate\tproductName\tcolor\tquantity\n26EGB0032\tTIFFANY\t2026-02-07 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0047\twong 欠S1 PRO\t2026-02-11 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0061\t花莉蕾 欠eufy S1 Pro 吸奶器\t2026-02-11 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0177\t張耐雪\t2026-02-11 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0146\tjessie fung\t2026-02-24 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0215\tms wong\t2026-03-01 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0121\t伍先生\t2026-03-04 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0072\t徐淑媚\t2026-03-04 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0074\t鐘太\t2026-03-13 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0103\t黃\t2026-03-21 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0258\tRHA\t2026-03-23 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0192\t鍾太\t2026-03-28 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0214\t甄小姐\t2026-03-28 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0046\tip yee man\t2026-04-01 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0099\tkwong\t2026-04-04 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0112\t林小姐\t2026-04-11 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0135\t林生\t2026-04-11 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0058\tyau \t2026-04-11 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0164\t盧先生\t2026-04-15 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0141\tcheung tsz hiu\t2026-04-20 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0171\tlau\t2026-04-28 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0117\t靜怡\t2026-05-02 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0161\tjason lam\t2026-05-02 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0173\tMISS.NG\t2026-05-02 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0091\t何生\t2026-05-04 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0153\tvianna yu\t2026-05-12 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0193\t江慧盈\t2026-05-16 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0154\twan tsz fung\t2026-05-16 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0179\tteddy suo\t2026-05-16 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0101\tmr chow\t2026-05-16 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0304\tLAU\t2026-05-21 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0228\tYAN CHAN\t2026-05-23 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0031\tCHAN\t2026-05-26 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0183\t何先生\t2026-05-26 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0147\tjess\t2026-05-26 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0095\tTracy Lau \t2026-05-30 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0063\tmabel ng\t2026-06-01 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0136\tsandra lee\t2026-06-01 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0190\t陳裕丰\t2026-06-01 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0340\t余生\t2026-06-02 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0110\t謝小姐\t2026-06-03 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0235\t鄭生\t2026-06-04 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0100\tchan\t2026-06-06 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0196\tHO MAN FUNG\t2026-06-06 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0298\t小姐 \t2026-06-12 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0055\tjoey siu\t2026-06-14 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0170\tchung\t2026-06-20 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0219\tLEE\t2026-06-20 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0035\tNG\t2026-06-30 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0057\t楊小姐\t2026-07-02 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0056\tkaty chan\t2026-07-15 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0142\t楊\t2026-07-18 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0078\tchoi chung ki\t2026-08-01 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0220\tLEE CHOW KIT\t2026-08-01 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n26EGB0339\tYAU\t2026-08-03 00:00:00\teufy S1 Pro 吸奶器\t粉色\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1837
+}

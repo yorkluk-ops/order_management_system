@@ -1,0 +1,14 @@
+{
+  "query": "SELECT DISTINCT packageId, packageName FROM orders WHERE orderNumber LIKE '26EGB03%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT DISTINCT packageId, packageName FROM orders WHERE orderNumber LIKE '26EGB03%' LIMIT 10;",
+  "rows": [
+    {
+      "packageId": "1",
+      "packageName": "其他｜單件產品購買"
+    }
+  ],
+  "messages": [],
+  "stdout": "packageId\tpackageName\n1\t其他｜單件產品購買\n",
+  "stderr": "",
+  "execution_time_ms": 1764
+}

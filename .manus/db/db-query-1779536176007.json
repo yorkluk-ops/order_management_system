@@ -1,0 +1,37 @@
+{
+  "query": "SELECT orderNumber, customerName, customerPhone, shopName, orderAmount, deliveryDate, deliveryAddress FROM orders WHERE orderNumber IN ('26EGB0308', '26EGB0309', '26EGB0310');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT orderNumber, customerName, customerPhone, shopName, orderAmount, deliveryDate, deliveryAddress FROM orders WHERE orderNumber IN ('26EGB0308', '26EGB0309', '26EGB0310');",
+  "rows": [
+    {
+      "orderNumber": "26EGB0308",
+      "customerName": "Annie Tong",
+      "customerPhone": "90254681",
+      "shopName": "SOGO ANNIE",
+      "orderAmount": "2888.00",
+      "deliveryDate": "2026-09-12 00:00:00",
+      "deliveryAddress": "G/F, No. 392, Chow Tin Tsuen, Ta Kwu Ling, N.T."
+    },
+    {
+      "orderNumber": "26EGB0309",
+      "customerName": "Choi",
+      "customerPhone": "95556626",
+      "shopName": "SOGO JOYCE",
+      "orderAmount": "2888.00",
+      "deliveryDate": "2026-05-24 00:00:00",
+      "deliveryAddress": "Flat B, 20/F, Block 6, Peak One, 63 Mei Tin Road, Shatin, N.T."
+    },
+    {
+      "orderNumber": "26EGB0310",
+      "customerName": "關先生",
+      "customerPhone": "92571449",
+      "shopName": "SOGO ANNIE",
+      "orderAmount": "2888.00",
+      "deliveryDate": "2026-08-22 00:00:00",
+      "deliveryAddress": "Flat H, 3/F, Block 3, Park Central, TKO"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tcustomerPhone\tshopName\torderAmount\tdeliveryDate\tdeliveryAddress\n26EGB0308\tAnnie Tong\t90254681\tSOGO ANNIE\t2888.00\t2026-09-12 00:00:00\tG/F, No. 392, Chow Tin Tsuen, Ta Kwu Ling, N.T.\n26EGB0309\tChoi\t95556626\tSOGO JOYCE\t2888.00\t2026-05-24 00:00:00\tFlat B, 20/F, Block 6, Peak One, 63 Mei Tin Road, Shatin, N.T.\n26EGB0310\t關先生\t92571449\tSOGO ANNIE\t2888.00\t2026-08-22 00:00:00\tFlat H, 3/F, Block 3, Park Central, TKO\n",
+  "stderr": "",
+  "execution_time_ms": 1736
+}

@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES \n('26EGB0328', 'Chloe Chan', '63081822', 1, '其他｜單件產品購買', 2888.00, 0.00, 'Room F1, 5/F, Tower 2, Ha Fa Shey Lohas Park, 將軍澳', '2026-08-08 00:00:00', 'pending', 'SOGO CWB收據: S118000760278 / 店舖CWB-118 / 贈品: 自提/送貨', 1, 'SOGO ANNIE', 'unpaid', 0.00);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES \n('26EGB0328', 'Chloe Chan', '63081822', 1, '其他｜單件產品購買', 2888.00, 0.00, 'Room F1, 5/F, Tower 2, Ha Fa Shey Lohas Park, 將軍澳', '2026-08-08 00:00:00', 'pending', 'SOGO CWB收據: S118000760278 / 店舖CWB-118 / 贈品: 自提/送貨', 1, 'SOGO ANNIE', 'unpaid', 0.00);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 5015
+}

@@ -1,0 +1,9 @@
+{
+  "query": "DELETE FROM orderProducts WHERE orderId IN (2340001, 2340002, 2340003, 2340004, 2340005);\nDELETE FROM orders WHERE orderNumber IN ('26EGB0334','26EGB0335','26EGB0336','26EGB0337','26EGB0338');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute DELETE FROM orderProducts WHERE orderId IN (2340001, 2340002, 2340003, 2340004, 2340005);\nDELETE FROM orders WHERE orderNumber IN ('26EGB0334','26EGB0335','26EGB0336','26EGB0337','26EGB0338');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1920
+}

@@ -1,0 +1,30 @@
+{
+  "query": "\nSELECT DISTINCT shopName, COUNT(*) as orderCount \nFROM orders \nWHERE shopName LIKE '%SOGO%' OR shopName LIKE '%KTK%'\nGROUP BY shopName\nORDER BY shopName;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT DISTINCT shopName, COUNT(*) as orderCount \nFROM orders \nWHERE shopName LIKE '%SOGO%' OR shopName LIKE '%KTK%'\nGROUP BY shopName\nORDER BY shopName;\n",
+  "rows": [
+    {
+      "shopName": "SOGO ANNIE",
+      "orderCount": "30"
+    },
+    {
+      "shopName": "SOGO CWB",
+      "orderCount": "12"
+    },
+    {
+      "shopName": "SOGO JOYCE",
+      "orderCount": "27"
+    },
+    {
+      "shopName": "SOGO KTK",
+      "orderCount": "7"
+    },
+    {
+      "shopName": "SOGO MEIMEI",
+      "orderCount": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "shopName\torderCount\nSOGO ANNIE\t30\nSOGO CWB\t12\nSOGO JOYCE\t27\nSOGO KTK\t7\nSOGO MEIMEI\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1829
+}

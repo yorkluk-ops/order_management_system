@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, name, sku, price FROM products WHERE name LIKE '%eufy%' OR name LIKE '%EUFY%' OR name LIKE '%E20%' OR sku LIKE '%E20%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, name, sku, price FROM products WHERE name LIKE '%eufy%' OR name LIKE '%EUFY%' OR name LIKE '%E20%' OR sku LIKE '%E20%';",
+  "rows": [
+    {
+      "id": "1",
+      "name": "EUFY E20 掃地機器人",
+      "sku": "EUFY-E20-BLK",
+      "price": "0.00"
+    },
+    {
+      "id": "60007",
+      "name": "EUFY E20 吸奶器",
+      "sku": "EUFY_E20",
+      "price": "0.00"
+    },
+    {
+      "id": "60008",
+      "name": "eufy S1 Pro 吸奶器",
+      "sku": "EUFY_S1PRO",
+      "price": "0.00"
+    },
+    {
+      "id": "90001",
+      "name": "eufy E20/S1 Pro 吸乳器喇叭罩 24mm",
+      "sku": "T8D02181-82",
+      "price": "0.00"
+    },
+    {
+      "id": "90002",
+      "name": "eufy E20/S1 Pro 吸乳器喇叭罩 27mm",
+      "sku": "T8D02181-81",
+      "price": "0.00"
+    },
+    {
+      "id": "90003",
+      "name": "eufy 熱敷免提式吸乳器 E20/S1 Pro 原廠儲乳罐 2個裝",
+      "sku": "T8D02181-83",
+      "price": "0.00"
+    },
+    {
+      "id": "120001",
+      "name": "eufy 母乳儲存袋（120個）",
+      "sku": "T6060121-80",
+      "price": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tsku\tprice\n1\tEUFY E20 掃地機器人\tEUFY-E20-BLK\t0.00\n60007\tEUFY E20 吸奶器\tEUFY_E20\t0.00\n60008\teufy S1 Pro 吸奶器\tEUFY_S1PRO\t0.00\n90001\teufy E20/S1 Pro 吸乳器喇叭罩 24mm\tT8D02181-82\t0.00\n90002\teufy E20/S1 Pro 吸乳器喇叭罩 27mm\tT8D02181-81\t0.00\n90003\teufy 熱敷免提式吸乳器 E20/S1 Pro 原廠儲乳罐 2個裝\tT8D02181-83\t0.00\n120001\teufy 母乳儲存袋（120個）\tT6060121-80\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 1785
+}

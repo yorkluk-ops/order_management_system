@@ -1,0 +1,11 @@
+{
+  "query": "\nSELECT id, name, sku FROM products WHERE name LIKE '%棒棒糖%' OR name LIKE '%糖果%';\nSELECT id, name FROM orders WHERE store LIKE '%中原%' LIMIT 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT id, name, sku FROM products WHERE name LIKE '%棒棒糖%' OR name LIKE '%糖果%';\nSELECT id, name FROM orders WHERE store LIKE '%中原%' LIMIT 1;\n",
+  "returncode": 1,
+  "logs": [
+    "id\tname\tsku",
+    "270003\tPOLED AIRLUV4 棒棒糖燕麥拿鐵\t5202111",
+    "270004\tPOLED AIRLUV4 棒棒糖跳跳糖\t5202112",
+    "ERROR 1054 (42S22) at line 3: Unknown column 'store' in 'where clause'"
+  ]
+}

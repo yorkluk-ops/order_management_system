@@ -1,0 +1,138 @@
+{
+  "query": "SELECT \n  o.orderNumber,\n  o.customerName,\n  o.deliveryDate,\n  op.productName,\n  op.color,\n  op.isGift\nFROM orders o\nJOIN orderProducts op ON op.orderId = o.id\nWHERE o.deliveryDate BETWEEN '2026-06-06' AND '2026-06-13'\n  AND op.isGift = 'no'\nORDER BY o.deliveryDate, o.orderNumber;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT \n  o.orderNumber,\n  o.customerName,\n  o.deliveryDate,\n  op.productName,\n  op.color,\n  op.isGift\nFROM orders o\nJOIN orderProducts op ON op.orderId = o.id\nWHERE o.deliveryDate BETWEEN '2026-06-06' AND '2026-06-13'\n  AND op.isGift = 'no'\nORDER BY o.deliveryDate, o.orderNumber;",
+  "rows": [
+    {
+      "orderNumber": "26EGB0100",
+      "customerName": "chan",
+      "deliveryDate": "2026-06-06 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0100",
+      "customerName": "chan",
+      "deliveryDate": "2026-06-06 00:00:00",
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0196",
+      "customerName": "HO MAN FUNG",
+      "deliveryDate": "2026-06-06 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0196",
+      "customerName": "HO MAN FUNG",
+      "deliveryDate": "2026-06-06 00:00:00",
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0261",
+      "customerName": "YEUNG",
+      "deliveryDate": "2026-06-08 00:00:00",
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0262",
+      "customerName": "KRISTEN",
+      "deliveryDate": "2026-06-08 00:00:00",
+      "productName": "UP911 白色",
+      "color": "白色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0265",
+      "customerName": "Kristen",
+      "deliveryDate": "2026-06-08 00:00:00",
+      "productName": "UP911 白色",
+      "color": "白色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0293",
+      "customerName": "MATTHEW CHEUNG",
+      "deliveryDate": "2026-06-08 00:00:00",
+      "productName": "UP911 綠色",
+      "color": "綠色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0326",
+      "customerName": "Serena Cheung",
+      "deliveryDate": "2026-06-08 00:00:00",
+      "productName": "UPANG UP920PLUS 粉紅色",
+      "color": "粉紅色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0160",
+      "customerName": "張沛朋",
+      "deliveryDate": "2026-06-12 00:00:00",
+      "productName": "UP911 藍色",
+      "color": "藍色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0298",
+      "customerName": "小姐 ",
+      "deliveryDate": "2026-06-12 00:00:00",
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0298",
+      "customerName": "小姐 ",
+      "deliveryDate": "2026-06-12 00:00:00",
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0108",
+      "customerName": "dolly",
+      "deliveryDate": "2026-06-13 00:00:00",
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0285",
+      "customerName": "KELVIN",
+      "deliveryDate": "2026-06-13 00:00:00",
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0344",
+      "customerName": "協創貿易有限公司-徐小姐",
+      "deliveryDate": "2026-06-13 00:00:00",
+      "productName": "UPANG UP920PLUS-BP 粉紅色",
+      "color": "粉紅色",
+      "isGift": "no"
+    },
+    {
+      "orderNumber": "26EGB0344",
+      "customerName": "協創貿易有限公司-徐小姐",
+      "deliveryDate": "2026-06-13 00:00:00",
+      "productName": "UPANG UP920 PLUS 寶貝藍",
+      "color": "寶貝藍",
+      "isGift": "no"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tdeliveryDate\tproductName\tcolor\tisGift\n26EGB0100\tchan\t2026-06-06 00:00:00\teufy S1 Pro 吸奶器\t粉色\tno\n26EGB0100\tchan\t2026-06-06 00:00:00\tUP920 奶油白色\t奶油白色\tno\n26EGB0196\tHO MAN FUNG\t2026-06-06 00:00:00\teufy S1 Pro 吸奶器\t粉色\tno\n26EGB0196\tHO MAN FUNG\t2026-06-06 00:00:00\tUP920 淺灰色\t淺灰色\tno\n26EGB0261\tYEUNG\t2026-06-08 00:00:00\tUP920 淺灰色\t淺灰色\tno\n26EGB0262\tKRISTEN\t2026-06-08 00:00:00\tUP911 白色\t白色\tno\n26EGB0265\tKristen\t2026-06-08 00:00:00\tUP911 白色\t白色\tno\n26EGB0293\tMATTHEW CHEUNG\t2026-06-08 00:00:00\tUP911 綠色\t綠色\tno\n26EGB0326\tSerena Cheung\t2026-06-08 00:00:00\tUPANG UP920PLUS 粉紅色\t粉紅色\tno\n26EGB0160\t張沛朋\t2026-06-12 00:00:00\tUP911 藍色\t藍色\tno\n26EGB0298\t小姐 \t2026-06-12 00:00:00\teufy S1 Pro 吸奶器\t粉色\tno\n26EGB0298\t小姐 \t2026-06-12 00:00:00\tUP920 淺灰色\t淺灰色\tno\n26EGB0108\tdolly\t2026-06-13 00:00:00\tUP920 淺灰色\t淺灰色\tno\n26EGB0285\tKELVIN\t2026-06-13 00:00:00\tUP920 奶油白色\t奶油白色\tno\n26EGB0344\t協創貿易有限公司-徐小姐\t2026-06-13 00:00:00\tUPANG UP920PLUS-BP 粉紅色\t粉紅色\tno\n26EGB0344\t協創貿易有限公司-徐小姐\t2026-06-13 00:00:00\tUPANG UP920 PLUS 寶貝藍\t寶貝藍\tno\n",
+  "stderr": "",
+  "execution_time_ms": 2604
+}

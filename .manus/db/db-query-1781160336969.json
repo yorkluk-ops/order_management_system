@@ -1,0 +1,34 @@
+{
+  "query": "\nSELECT id, name, sku, color FROM products \nWHERE name LIKE '%UP920%'\nORDER BY name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT id, name, sku, color FROM products \nWHERE name LIKE '%UP920%'\nORDER BY name;\n",
+  "rows": [
+    {
+      "id": "30003",
+      "name": "UP920 奶油白色",
+      "sku": "UP920A-VC",
+      "color": "奶油白色"
+    },
+    {
+      "id": "30007",
+      "name": "UP920 淺灰色",
+      "sku": "UP920A-LG",
+      "color": "淺灰色"
+    },
+    {
+      "id": "300001",
+      "name": "UPANG UP920 PLUS 寶貝藍",
+      "sku": "UP920PLUS-BB",
+      "color": "寶貝藍"
+    },
+    {
+      "id": "390001",
+      "name": "UPANG UP920PLUS-BP 粉紅色",
+      "sku": "UP920PLUS-BP",
+      "color": "粉紅色"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tsku\tcolor\n30003\tUP920 奶油白色\tUP920A-VC\t奶油白色\n30007\tUP920 淺灰色\tUP920A-LG\t淺灰色\n300001\tUPANG UP920 PLUS 寶貝藍\tUP920PLUS-BB\t寶貝藍\n390001\tUPANG UP920PLUS-BP 粉紅色\tUP920PLUS-BP\t粉紅色\n",
+  "stderr": "",
+  "execution_time_ms": 1711
+}

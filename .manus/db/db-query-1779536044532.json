@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES ('26EGB0308', 'Annie Tong', '90254681', 1, '其他｜單件產品購買', 2888.00, 0.00, 'G/F, No. 392, Chow Tin Tsuen, Ta Kwu Ling, N.T.', '2026-09-12 00:00:00', 'pending', '收貨人: Leonard Chan / SOGO收據: S1170008324O3', 1, 'SOGO ANNIE', 'unpaid', 0.00);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES ('26EGB0308', 'Annie Tong', '90254681', 1, '其他｜單件產品購買', 2888.00, 0.00, 'G/F, No. 392, Chow Tin Tsuen, Ta Kwu Ling, N.T.', '2026-09-12 00:00:00', 'pending', '收貨人: Leonard Chan / SOGO收據: S1170008324O3', 1, 'SOGO ANNIE', 'unpaid', 0.00);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1771
+}

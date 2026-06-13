@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, name, color FROM products WHERE name LIKE '%UP920%PLUS%藍%' OR name LIKE '%UP920%PLUS%Blue%' OR (name LIKE '%UP920%' AND color LIKE '%藍%') LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, name, color FROM products WHERE name LIKE '%UP920%PLUS%藍%' OR name LIKE '%UP920%PLUS%Blue%' OR (name LIKE '%UP920%' AND color LIKE '%藍%') LIMIT 5;",
+  "rows": [
+    {
+      "id": "300001",
+      "name": "UPANG UP920 PLUS 寶貝藍",
+      "color": "寶貝藍"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcolor\n300001\tUPANG UP920 PLUS 寶貝藍\t寶貝藍\n",
+  "stderr": "",
+  "execution_time_ms": 1747
+}

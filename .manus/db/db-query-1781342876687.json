@@ -1,0 +1,9 @@
+{
+  "query": "\n-- 統一商鋪名稱\nUPDATE orders SET shopName = 'SOGO KTK' WHERE shopName = 'sogo ktk';\nUPDATE orders SET shopName = 'SOGO KTK' WHERE shopName = 'KT SOGO';\nUPDATE orders SET shopName = 'SOGO KTK' WHERE shopName = 'KT-SOGO';\nUPDATE orders SET shopName = 'SOGO KTK' WHERE shopName = 'SOGO KT';\nUPDATE orders SET shopName = 'SOGO JOYCE' WHERE shopName = 'SOGO CWB JOYCE';\nUPDATE orders SET shopName = 'SOGO CWB' WHERE shopName = 'SOGO 7/F';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \n-- 統一商鋪名稱\nUPDATE orders SET shopName = 'SOGO KTK' WHERE shopName = 'sogo ktk';\nUPDATE orders SET shopName = 'SOGO KTK' WHERE shopName = 'KT SOGO';\nUPDATE orders SET shopName = 'SOGO KTK' WHERE shopName = 'KT-SOGO';\nUPDATE orders SET shopName = 'SOGO KTK' WHERE shopName = 'SOGO KT';\nUPDATE orders SET shopName = 'SOGO JOYCE' WHERE shopName = 'SOGO CWB JOYCE';\nUPDATE orders SET shopName = 'SOGO CWB' WHERE shopName = 'SOGO 7/F';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2895
+}

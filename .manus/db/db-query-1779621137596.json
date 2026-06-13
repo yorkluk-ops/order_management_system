@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice, isGift) VALUES (2040004, 60007, 'EUFY_E20', 'EUFY E20 吸奶器', NULL, 1, 1988.00, 'no');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice, isGift) VALUES (2040004, 60007, 'EUFY_E20', 'EUFY E20 吸奶器', NULL, 1, 1988.00, 'no');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1714
+}

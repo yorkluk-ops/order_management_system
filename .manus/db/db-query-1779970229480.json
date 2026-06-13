@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE orders SET notes = 'SOGO CWB Annie / UP920 Plus (Blue) 大仕先生 / 贈品：UPANG支架(送貨)、黑椅袋、HYUNDAI水機' WHERE orderNumber = '26EGB0331';\n\nINSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice, isGift)\nVALUES \n(2250001, NULL, 'STAND-BK', 'UPANG 站立支架', '黑色', 1, 0.00, 'yes'),\n(2250001, NULL, 'BAG-BK', '黑椅袋', '黑色', 1, 0.00, 'yes'),\n(2250001, NULL, 'HY-2200W', '現代 HY-2200W 即熱式水機', '', 1, 0.00, 'yes');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute UPDATE orders SET notes = 'SOGO CWB Annie / UP920 Plus (Blue) 大仕先生 / 贈品：UPANG支架(送貨)、黑椅袋、HYUNDAI水機' WHERE orderNumber = '26EGB0331';\n\nINSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, unitPrice, isGift)\nVALUES \n(2250001, NULL, 'STAND-BK', 'UPANG 站立支架', '黑色', 1, 0.00, 'yes'),\n(2250001, NULL, 'BAG-BK', '黑椅袋', '黑色', 1, 0.00, 'yes'),\n(2250001, NULL, 'HY-2200W', '現代 HY-2200W 即熱式水機', '', 1, 0.00, 'yes');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2446
+}

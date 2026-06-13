@@ -1,0 +1,17 @@
+{
+  "query": "SELECT o.orderNumber, o.customerName, op.productName, op.color, op.quantity\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE o.orderNumber IN ('26EGB0190')\nAND (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT o.orderNumber, o.customerName, op.productName, op.color, op.quantity\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE o.orderNumber IN ('26EGB0190')\nAND (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%');",
+  "rows": [
+    {
+      "orderNumber": "26EGB0190",
+      "customerName": "陳裕丰",
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "quantity": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tproductName\tcolor\tquantity\n26EGB0190\t陳裕丰\tUP920 淺灰色\t淺灰色\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1755
+}

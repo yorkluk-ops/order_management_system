@@ -1,0 +1,79 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'orders' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'orders' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "orderNumber"
+    },
+    {
+      "COLUMN_NAME": "customerName"
+    },
+    {
+      "COLUMN_NAME": "customerPhone"
+    },
+    {
+      "COLUMN_NAME": "customerEmail"
+    },
+    {
+      "COLUMN_NAME": "packageId"
+    },
+    {
+      "COLUMN_NAME": "packageName"
+    },
+    {
+      "COLUMN_NAME": "packageVariant"
+    },
+    {
+      "COLUMN_NAME": "orderAmount"
+    },
+    {
+      "COLUMN_NAME": "commission"
+    },
+    {
+      "COLUMN_NAME": "deliveryAddress"
+    },
+    {
+      "COLUMN_NAME": "deliveryDate"
+    },
+    {
+      "COLUMN_NAME": "deliveryTimeSlot"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "notes"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "createdBy"
+    },
+    {
+      "COLUMN_NAME": "trackingNumber"
+    },
+    {
+      "COLUMN_NAME": "paymentStatus"
+    },
+    {
+      "COLUMN_NAME": "paidAmount"
+    },
+    {
+      "COLUMN_NAME": "customerId"
+    },
+    {
+      "COLUMN_NAME": "shopName"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\norderNumber\ncustomerName\ncustomerPhone\ncustomerEmail\npackageId\npackageName\npackageVariant\norderAmount\ncommission\ndeliveryAddress\ndeliveryDate\ndeliveryTimeSlot\nstatus\nnotes\ncreatedAt\nupdatedAt\ncreatedBy\ntrackingNumber\npaymentStatus\npaidAmount\ncustomerId\nshopName\n",
+  "stderr": "",
+  "execution_time_ms": 1726
+}

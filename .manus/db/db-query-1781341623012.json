@@ -1,0 +1,34 @@
+{
+  "query": "\nSELECT \n  op.productName,\n  op.sku,\n  op.color,\n  SUM(op.quantity) as totalQty\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE o.orderNumber IN ('26EGB0354','26EGB0287','26EGB0282','26EGB0266','26EGB0219','26EGB0196','26EGB0170','26EGB0094')\n  AND (op.sku LIKE '%UP9%' OR op.sku LIKE '%UP911%' OR op.productName LIKE '%UPANG%' OR op.productName LIKE '%UP9%')\n  AND op.isGift = 'no'\nGROUP BY op.productName, op.sku, op.color\nORDER BY totalQty DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT \n  op.productName,\n  op.sku,\n  op.color,\n  SUM(op.quantity) as totalQty\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE o.orderNumber IN ('26EGB0354','26EGB0287','26EGB0282','26EGB0266','26EGB0219','26EGB0196','26EGB0170','26EGB0094')\n  AND (op.sku LIKE '%UP9%' OR op.sku LIKE '%UP911%' OR op.productName LIKE '%UPANG%' OR op.productName LIKE '%UP9%')\n  AND op.isGift = 'no'\nGROUP BY op.productName, op.sku, op.color\nORDER BY totalQty DESC;\n",
+  "rows": [
+    {
+      "productName": "UP920 淺灰色",
+      "sku": "UP920A-LG",
+      "color": "淺灰色",
+      "totalQty": "4"
+    },
+    {
+      "productName": "UPANG UP920PLUS-BP 粉紅色",
+      "sku": "UP920PLUS-BP",
+      "color": "粉紅色",
+      "totalQty": "2"
+    },
+    {
+      "productName": "UP911 白色",
+      "sku": "UP911A-WH",
+      "color": "白色",
+      "totalQty": "1"
+    },
+    {
+      "productName": "UP920 奶油白色",
+      "sku": "UP920A-VC",
+      "color": "奶油白色",
+      "totalQty": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "productName\tsku\tcolor\ttotalQty\nUP920 淺灰色\tUP920A-LG\t淺灰色\t4\nUPANG UP920PLUS-BP 粉紅色\tUP920PLUS-BP\t粉紅色\t2\nUP911 白色\tUP911A-WH\t白色\t1\nUP920 奶油白色\tUP920A-VC\t奶油白色\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1819
+}

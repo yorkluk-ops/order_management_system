@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT id, orderNumber FROM orders WHERE orderNumber IN ('26EGB0351','26EGB0352','26EGB0353');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT id, orderNumber FROM orders WHERE orderNumber IN ('26EGB0351','26EGB0352','26EGB0353');\n",
+  "rows": [
+    {
+      "id": "2760001",
+      "orderNumber": "26EGB0351"
+    },
+    {
+      "id": "2760002",
+      "orderNumber": "26EGB0352"
+    },
+    {
+      "id": "2760003",
+      "orderNumber": "26EGB0353"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\n2760001\t26EGB0351\n2760002\t26EGB0352\n2760003\t26EGB0353\n",
+  "stderr": "",
+  "execution_time_ms": 1793
+}

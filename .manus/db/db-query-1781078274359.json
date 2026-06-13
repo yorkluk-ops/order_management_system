@@ -1,0 +1,65 @@
+{
+  "query": "\nSELECT o.orderNumber, o.customerName, o.deliveryDate\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE (op.productName LIKE '%eufy%S1%Pro%' OR op.productName LIKE '%S1 Pro%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\n  AND (o.deliveryDate IS NULL OR o.deliveryDate > '2026-06-10 23:59:59')\nORDER BY o.deliveryDate ASC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT o.orderNumber, o.customerName, o.deliveryDate\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE (op.productName LIKE '%eufy%S1%Pro%' OR op.productName LIKE '%S1 Pro%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\n  AND (o.deliveryDate IS NULL OR o.deliveryDate > '2026-06-10 23:59:59')\nORDER BY o.deliveryDate ASC;\n",
+  "rows": [
+    {
+      "orderNumber": "26EGB0298",
+      "customerName": "小姐 ",
+      "deliveryDate": "2026-06-12 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0055",
+      "customerName": "joey siu",
+      "deliveryDate": "2026-06-14 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0170",
+      "customerName": "chung",
+      "deliveryDate": "2026-06-20 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0219",
+      "customerName": "LEE",
+      "deliveryDate": "2026-06-20 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0035",
+      "customerName": "NG",
+      "deliveryDate": "2026-06-30 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0057",
+      "customerName": "楊小姐",
+      "deliveryDate": "2026-07-02 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0056",
+      "customerName": "katy chan",
+      "deliveryDate": "2026-07-15 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0142",
+      "customerName": "楊",
+      "deliveryDate": "2026-07-18 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0078",
+      "customerName": "choi chung ki",
+      "deliveryDate": "2026-08-01 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0220",
+      "customerName": "LEE CHOW KIT",
+      "deliveryDate": "2026-08-01 00:00:00"
+    },
+    {
+      "orderNumber": "26EGB0339",
+      "customerName": "YAU",
+      "deliveryDate": "2026-08-03 00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tdeliveryDate\n26EGB0298\t小姐 \t2026-06-12 00:00:00\n26EGB0055\tjoey siu\t2026-06-14 00:00:00\n26EGB0170\tchung\t2026-06-20 00:00:00\n26EGB0219\tLEE\t2026-06-20 00:00:00\n26EGB0035\tNG\t2026-06-30 00:00:00\n26EGB0057\t楊小姐\t2026-07-02 00:00:00\n26EGB0056\tkaty chan\t2026-07-15 00:00:00\n26EGB0142\t楊\t2026-07-18 00:00:00\n26EGB0078\tchoi chung ki\t2026-08-01 00:00:00\n26EGB0220\tLEE CHOW KIT\t2026-08-01 00:00:00\n26EGB0339\tYAU\t2026-08-03 00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 1788
+}

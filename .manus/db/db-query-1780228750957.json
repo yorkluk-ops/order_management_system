@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, orderNumber, customerName FROM orders WHERE orderNumber IN ('26EGB0334','26EGB0335','26EGB0336','26EGB0337','26EGB0338');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, orderNumber, customerName FROM orders WHERE orderNumber IN ('26EGB0334','26EGB0335','26EGB0336','26EGB0337','26EGB0338');",
+  "rows": [
+    {
+      "id": "2340001",
+      "orderNumber": "26EGB0334",
+      "customerName": "黎先生"
+    },
+    {
+      "id": "2340002",
+      "orderNumber": "26EGB0335",
+      "customerName": "Annica Yau"
+    },
+    {
+      "id": "2340003",
+      "orderNumber": "26EGB0336",
+      "customerName": "Wongkei"
+    },
+    {
+      "id": "2340004",
+      "orderNumber": "26EGB0337",
+      "customerName": "呂倫"
+    },
+    {
+      "id": "2340005",
+      "orderNumber": "26EGB0338",
+      "customerName": "Annie Tong"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\n2340001\t26EGB0334\t黎先生\n2340002\t26EGB0335\tAnnica Yau\n2340003\t26EGB0336\tWongkei\n2340004\t26EGB0337\t呂倫\n2340005\t26EGB0338\tAnnie Tong\n",
+  "stderr": "",
+  "execution_time_ms": 1517
+}

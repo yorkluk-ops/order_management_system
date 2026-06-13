@@ -1,0 +1,10 @@
+{
+  "query": "SELECT orderNumber FROM orders ORDER BY orderNumber DESC LIMIT 1;\nSELECT id, productName, sku FROM products WHERE productName LIKE '%UP920%' OR productName LIKE '%Shnuggle%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT orderNumber FROM orders ORDER BY orderNumber DESC LIMIT 1;\nSELECT id, productName, sku FROM products WHERE productName LIKE '%UP920%' OR productName LIKE '%Shnuggle%' LIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "orderNumber",
+    "26EGB0345",
+    "ERROR 1054 (42S22) at line 2: Unknown column 'productname' in 'where clause'"
+  ]
+}

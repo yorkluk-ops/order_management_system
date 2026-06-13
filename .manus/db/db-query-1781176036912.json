@@ -1,0 +1,22 @@
+{
+  "query": "\n-- Check how many orderProducts have unitPrice = 0\nSELECT COUNT(*) as zero_price_count FROM orderProducts WHERE unitPrice = 0 OR unitPrice IS NULL;\n\n-- Check 26EGB0344 products specifically\nSELECT op.id, op.productName, op.sku, op.quantity, op.unitPrice, o.orderNumber, o.orderAmount\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE o.orderNumber = '26EGB0344';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \n-- Check how many orderProducts have unitPrice = 0\nSELECT COUNT(*) as zero_price_count FROM orderProducts WHERE unitPrice = 0 OR unitPrice IS NULL;\n\n-- Check 26EGB0344 products specifically\nSELECT op.id, op.productName, op.sku, op.quantity, op.unitPrice, o.orderNumber, o.orderAmount\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE o.orderNumber = '26EGB0344';\n",
+  "rows": [
+    {
+      "zero_price_count": "1067"
+    },
+    {
+      "zero_price_count": "id\tproductName\tsku\tquantity\tunitPrice\torderNumber\torderAmount"
+    },
+    {
+      "zero_price_count": "6570005\tUPANG UP920PLUS-BP 粉紅色\tUP920PLUS-BP\t5\t0.00\t26EGB0344\t28990.00"
+    },
+    {
+      "zero_price_count": "6570006\tUPANG UP920 PLUS 寶貝藍\tUP920PLUS-BB\t5\t0.00\t26EGB0344\t28990.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "zero_price_count\n1067\nid\tproductName\tsku\tquantity\tunitPrice\torderNumber\torderAmount\n6570005\tUPANG UP920PLUS-BP 粉紅色\tUP920PLUS-BP\t5\t0.00\t26EGB0344\t28990.00\n6570006\tUPANG UP920 PLUS 寶貝藍\tUP920PLUS-BB\t5\t0.00\t26EGB0344\t28990.00\n",
+  "stderr": "",
+  "execution_time_ms": 2053
+}

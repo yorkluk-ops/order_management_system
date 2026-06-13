@@ -1,0 +1,22 @@
+{
+  "query": "SELECT * FROM orderProducts LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT * FROM orderProducts LIMIT 1;",
+  "rows": [
+    {
+      "id": "90001",
+      "orderId": "60001",
+      "productId": "NULL",
+      "sku": "UP911A-WH",
+      "productName": "UP911 白色",
+      "color": "白色",
+      "quantity": "1",
+      "createdAt": "2026-01-31 05:07:32",
+      "isGift": "no",
+      "unitPrice": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderId\tproductId\tsku\tproductName\tcolor\tquantity\tcreatedAt\tisGift\tunitPrice\n90001\t60001\tNULL\tUP911A-WH\tUP911 白色\t白色\t1\t2026-01-31 05:07:32\tno\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 1761
+}

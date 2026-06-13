@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT orderNumber FROM orders ORDER BY createdAt DESC LIMIT 1;\n\nSELECT id, name, sku, color FROM products \nWHERE name LIKE '%UP920%PLUS%' OR name LIKE '%UP920PLUS%'\nORDER BY name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT orderNumber FROM orders ORDER BY createdAt DESC LIMIT 1;\n\nSELECT id, name, sku, color FROM products \nWHERE name LIKE '%UP920%PLUS%' OR name LIKE '%UP920PLUS%'\nORDER BY name;\n",
+  "rows": [
+    {
+      "orderNumber": "26EGB0350"
+    },
+    {
+      "orderNumber": "id\tname\tsku\tcolor"
+    },
+    {
+      "orderNumber": "300001\tUPANG UP920 PLUS 寶貝藍\tUP920PLUS-BB\t寶貝藍"
+    },
+    {
+      "orderNumber": "390001\tUPANG UP920PLUS-BP 粉紅色\tUP920PLUS-BP\t粉紅色"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\n26EGB0350\nid\tname\tsku\tcolor\n300001\tUPANG UP920 PLUS 寶貝藍\tUP920PLUS-BB\t寶貝藍\n390001\tUPANG UP920PLUS-BP 粉紅色\tUP920PLUS-BP\t粉紅色\n",
+  "stderr": "",
+  "execution_time_ms": 2013
+}

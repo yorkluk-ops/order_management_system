@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, orderNumber, customerName FROM orders WHERE orderNumber IN ('26EGB0320', '26EGB0321', '26EGB0322') ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, orderNumber, customerName FROM orders WHERE orderNumber IN ('26EGB0320', '26EGB0321', '26EGB0322') ORDER BY id;",
+  "rows": [
+    {
+      "id": "2100001",
+      "orderNumber": "26EGB0320",
+      "customerName": "湯小姐"
+    },
+    {
+      "id": "2100002",
+      "orderNumber": "26EGB0321",
+      "customerName": "劉小姐"
+    },
+    {
+      "id": "2100003",
+      "orderNumber": "26EGB0322",
+      "customerName": "Ms Man"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\n2100001\t26EGB0320\t湯小姐\n2100002\t26EGB0321\t劉小姐\n2100003\t26EGB0322\tMs Man\n",
+  "stderr": "",
+  "execution_time_ms": 1767
+}

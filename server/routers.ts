@@ -511,14 +511,56 @@ export const appRouter = router({
         id: z.number(),
         status: z.enum(["pending", "confirmed", "delivering", "completed", "cancelled"]),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const order = await getOrderById(input.id);
         if (!order) throw new Error("訂單不存在");
 
-        await updateOrderStatus(input.id, input.status);
+        const prevStatus = order.status;
+        const newStatus = input.status;
+
+        await updateOrderStatus(input.id, newStatus);
+
+        // ── 奧創數碼有限公司庫存自動同步 ──────────────────────────
+        // 規則：
+        //   pending/confirmed → delivering：扣減奧創數碼有限公司庫存（出貨）
+        //   delivering → pending/confirmed：恢復奧創數碼有限公司庫存（撤回）
+        const ULTRON_SHOP_NAME = "奧創數碼有限公司";
+        const isGoingToDelivering = newStatus === "delivering" && prevStatus !== "delivering";
+        const isRevertFromDelivering = prevStatus === "delivering" && (newStatus === "pending" || newStatus === "confirmed");
+
+        if (isGoingToDelivering || isRevertFromDelivering) {
+          const ultronShop = await getShopByName(ULTRON_SHOP_NAME);
+          if (ultronShop) {
+            const orderProductsList = await getOrderProducts(input.id);
+            for (const product of orderProductsList) {
+              if (product.isGift === "yes") continue; // 贈品不計
+              const dbProduct = await getProductBySku(product.sku);
+              if (!dbProduct) continue;
+
+              // 出貨：扣減奧創庫存；撤回：恢復奧創庫存
+              const qtyChange = isGoingToDelivering ? -product.quantity : product.quantity;
+              const newQty = await adjustShopInventory(dbProduct.id, ultronShop.id, qtyChange);
+
+              await createInventoryLog({
+                productId: dbProduct.id,
+                shopId: ultronShop.id,
+                quantityChange: qtyChange,
+                quantityAfter: newQty,
+                changeType: isGoingToDelivering ? "order" : "order_cancel",
+                referenceId: input.id,
+                referenceType: "order",
+                notes: isGoingToDelivering
+                  ? `訂單 ${order.orderNumber} 配送中 — 奧創出貨`
+                  : `訂單 ${order.orderNumber} 撤回配送 — 恢復奧創庫存`,
+                createdBy: ctx.user?.id,
+              });
+            }
+          }
+        }
+        // ─────────────────────────────────────────────────────────
 
         // 發送狀態變更通知
-        const statusLabel = ORDER_STATUS[input.status].label;
+        const statusLabel = ORDER_STATUS[newStatus].label;
         await notifyOwner({
           title: `訂單狀態更新 ${order.orderNumber}`,
           content: `訂單 ${order.orderNumber} 狀態已更新為：${statusLabel}\n客戶：${order.customerName}`,

@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, sku FROM products WHERE sku LIKE '%UP920%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, name, sku FROM products WHERE sku LIKE '%UP920%';",
+  "rows": [
+    {
+      "id": "30003",
+      "name": "UP920 奶油白色",
+      "sku": "UP920A-VC"
+    },
+    {
+      "id": "30007",
+      "name": "UP920 淺灰色",
+      "sku": "UP920A-LG"
+    },
+    {
+      "id": "300001",
+      "name": "UPANG UP920 PLUS 寶貝藍",
+      "sku": "UP920PLUS-BB"
+    },
+    {
+      "id": "390001",
+      "name": "UPANG UP920PLUS-BP 粉紅色",
+      "sku": "UP920PLUS-BP"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tsku\n30003\tUP920 奶油白色\tUP920A-VC\n30007\tUP920 淺灰色\tUP920A-LG\n300001\tUPANG UP920 PLUS 寶貝藍\tUP920PLUS-BB\n390001\tUPANG UP920PLUS-BP 粉紅色\tUP920PLUS-BP\n",
+  "stderr": "",
+  "execution_time_ms": 1795
+}

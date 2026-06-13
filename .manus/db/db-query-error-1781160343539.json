@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT id, name FROM stores WHERE name LIKE '%JOYCE%' OR name LIKE '%ANNIE%' OR name LIKE '%KTK%' OR name LIKE '%CWB%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT id, name FROM stores WHERE name LIKE '%JOYCE%' OR name LIKE '%ANNIE%' OR name LIKE '%KTK%' OR name LIKE '%CWB%';\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 2: Table 'jmrcefnsdefaymvuxfcyak.stores' doesn't exist"
+  ]
+}

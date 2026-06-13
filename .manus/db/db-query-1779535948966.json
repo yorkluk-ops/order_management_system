@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, name FROM shops WHERE name LIKE '%SOGO%' OR name LIKE '%Annie%' OR name LIKE '%Joyce%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, name FROM shops WHERE name LIKE '%SOGO%' OR name LIKE '%Annie%' OR name LIKE '%Joyce%';",
+  "rows": [
+    {
+      "id": "210004",
+      "name": "SOGO ANNIE"
+    },
+    {
+      "id": "210001",
+      "name": "SOGO CWB"
+    },
+    {
+      "id": "210003",
+      "name": "SOGO JOYCE"
+    },
+    {
+      "id": "210002",
+      "name": "SOGO KTK"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n210004\tSOGO ANNIE\n210001\tSOGO CWB\n210003\tSOGO JOYCE\n210002\tSOGO KTK\n",
+  "stderr": "",
+  "execution_time_ms": 1841
+}

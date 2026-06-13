@@ -1,0 +1,115 @@
+{
+  "query": "SELECT op.productName, op.color, SUM(op.quantity) as total_qty\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE o.orderNumber IN ('26EGB0326', '26EGB0311', '26EGB0293', '26EGB0265', '26EGB0262', '26EGB0261', '26EGB0245', '26EGB0238', '26EGB0235', '26EGB0217', '26EGB0209', '26EGB0196', '26EGB0198', '26EGB0169', '26EGB0151', '26EGB0143', '26EGB0136', '26EGB0113', '26EGB0110', '26EGB0100')\nGROUP BY op.productName, op.color\nORDER BY total_qty DESC, op.productName;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT op.productName, op.color, SUM(op.quantity) as total_qty\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE o.orderNumber IN ('26EGB0326', '26EGB0311', '26EGB0293', '26EGB0265', '26EGB0262', '26EGB0261', '26EGB0245', '26EGB0238', '26EGB0235', '26EGB0217', '26EGB0209', '26EGB0196', '26EGB0198', '26EGB0169', '26EGB0151', '26EGB0143', '26EGB0136', '26EGB0113', '26EGB0110', '26EGB0100')\nGROUP BY op.productName, op.color\nORDER BY total_qty DESC, op.productName;",
+  "rows": [
+    {
+      "productName": "UPANG 站立支架",
+      "color": "NULL",
+      "total_qty": "8"
+    },
+    {
+      "productName": "Babybrezza Formula Pro Advanced 自動沖奶機 6月出貨",
+      "color": "白色",
+      "total_qty": "6"
+    },
+    {
+      "productName": "PEBBLY THERMIOMETER 水温计",
+      "color": "灰色",
+      "total_qty": "6"
+    },
+    {
+      "productName": "UP920 淺灰色",
+      "color": "淺灰色",
+      "total_qty": "6"
+    },
+    {
+      "productName": "eufy S1 Pro 吸奶器",
+      "color": "粉色",
+      "total_qty": "5"
+    },
+    {
+      "productName": " GOING BEAR 包淺灰色",
+      "color": "淺灰色",
+      "total_qty": "4"
+    },
+    {
+      "productName": "AIRLUV4 LOLLIPOP 奶白",
+      "color": "奶白",
+      "total_qty": "4"
+    },
+    {
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "total_qty": "4"
+    },
+    {
+      "productName": "eufy 母乳儲存袋（120個）",
+      "color": "透明",
+      "total_qty": "3"
+    },
+    {
+      "productName": "UP911 白色",
+      "color": "白色",
+      "total_qty": "3"
+    },
+    {
+      "productName": " GOING BEAR BAG 炭黑",
+      "color": "炭黑",
+      "total_qty": "2"
+    },
+    {
+      "productName": "eufy E20/S1 Pro 吸乳器喇叭罩 27mm",
+      "color": "粉色",
+      "total_qty": "2"
+    },
+    {
+      "productName": "Shnuggle 嬰兒沐浴盤 白色",
+      "color": "白色",
+      "total_qty": "2"
+    },
+    {
+      "productName": "收纳桶 灰竭色",
+      "color": "灰竭色",
+      "total_qty": "2"
+    },
+    {
+      "productName": "收纳桶 灰色",
+      "color": "灰色",
+      "total_qty": "2"
+    },
+    {
+      "productName": "現代HY-2200W即熱式水機 紫色",
+      "color": "紫色",
+      "total_qty": "2"
+    },
+    {
+      "productName": "Baby Brezza Bottle Washer Pro",
+      "color": "NULL",
+      "total_qty": "1"
+    },
+    {
+      "productName": "SHNUGGLE 小夜灯",
+      "color": "白色",
+      "total_qty": "1"
+    },
+    {
+      "productName": "UP911 綠色",
+      "color": "綠色",
+      "total_qty": "1"
+    },
+    {
+      "productName": "UPANG UP920 PLUS 寶貝藍",
+      "color": "藍色",
+      "total_qty": "1"
+    },
+    {
+      "productName": "UPANG UP920PLUS 粉紅色",
+      "color": "粉紅色",
+      "total_qty": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "productName\tcolor\ttotal_qty\nUPANG 站立支架\tNULL\t8\nBabybrezza Formula Pro Advanced 自動沖奶機 6月出貨\t白色\t6\nPEBBLY THERMIOMETER 水温计\t灰色\t6\nUP920 淺灰色\t淺灰色\t6\neufy S1 Pro 吸奶器\t粉色\t5\n GOING BEAR 包淺灰色\t淺灰色\t4\nAIRLUV4 LOLLIPOP 奶白\t奶白\t4\nUP920 奶油白色\t奶油白色\t4\neufy 母乳儲存袋（120個）\t透明\t3\nUP911 白色\t白色\t3\n GOING BEAR BAG 炭黑\t炭黑\t2\neufy E20/S1 Pro 吸乳器喇叭罩 27mm\t粉色\t2\nShnuggle 嬰兒沐浴盤 白色\t白色\t2\n收纳桶 灰竭色\t灰竭色\t2\n收纳桶 灰色\t灰色\t2\n現代HY-2200W即熱式水機 紫色\t紫色\t2\nBaby Brezza Bottle Washer Pro\tNULL\t1\nSHNUGGLE 小夜灯\t白色\t1\nUP911 綠色\t綠色\t1\nUPANG UP920 PLUS 寶貝藍\t藍色\t1\nUPANG UP920PLUS 粉紅色\t粉紅色\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1814
+}

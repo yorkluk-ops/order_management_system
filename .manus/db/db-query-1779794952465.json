@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES \n('26EGB0330', 'Mr Lai', '63566646', 1, '其他｜單件產品購買', 2688.00, 0.00, '沙田馬鞍山富安花園1座2樓F室', '2026-05-30 00:00:00', 'pending', 'SOGO Kai Tak / 電話2: 51152835 / 1st Pick: 5月30日星期六 / 2nd: 5月31日星期日 / 之中之選一日(確認了)', 1, 'SOGO JOYCE', 'unpaid', 0.00);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, createdBy, shopName, paymentStatus, paidAmount) VALUES \n('26EGB0330', 'Mr Lai', '63566646', 1, '其他｜單件產品購買', 2688.00, 0.00, '沙田馬鞍山富安花園1座2樓F室', '2026-05-30 00:00:00', 'pending', 'SOGO Kai Tak / 電話2: 51152835 / 1st Pick: 5月30日星期六 / 2nd: 5月31日星期日 / 之中之選一日(確認了)', 1, 'SOGO JOYCE', 'unpaid', 0.00);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1749
+}

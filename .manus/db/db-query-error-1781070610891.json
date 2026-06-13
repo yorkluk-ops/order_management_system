@@ -1,0 +1,8 @@
+{
+  "query": "\nINSERT INTO orders (orderNumber, customerName, customerPhone, customerEmail, packageId, packageName, packageVariant, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, shopName)\nVALUES ('26EGB0350', 'Ada Wong', '60819247', 'carman122001@yahoo.com.hk', 1, '其他｜單件產品購買', 'AIRLUV4 Lollipop 糖果點點', 578.00, 0, '將軍澳欣明苑欣梅閣21樓2室', NULL, 'pending', '原單號: HLJABDPSY', '中原電器');\n\nINSERT INTO orderProducts (orderId, productId, productName, sku, quantity, unitPrice, totalPrice)\nSELECT o.id, 270004, 'POLED AIRLUV4 棒棒糖跳跳糖', '5202112', 1, 578.00, 578.00\nFROM orders o WHERE o.orderNumber = '26EGB0350';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nINSERT INTO orders (orderNumber, customerName, customerPhone, customerEmail, packageId, packageName, packageVariant, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, shopName)\nVALUES ('26EGB0350', 'Ada Wong', '60819247', 'carman122001@yahoo.com.hk', 1, '其他｜單件產品購買', 'AIRLUV4 Lollipop 糖果點點', 578.00, 0, '將軍澳欣明苑欣梅閣21樓2室', NULL, 'pending', '原單號: HLJABDPSY', '中原電器');\n\nINSERT INTO orderProducts (orderId, productId, productName, sku, quantity, unitPrice, totalPrice)\nSELECT o.id, 270004, 'POLED AIRLUV4 棒棒糖跳跳糖', '5202112', 1, 578.00, 578.00\nFROM orders o WHERE o.orderNumber = '26EGB0350';\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 5: Unknown column 'totalPrice' in 'field list'"
+  ]
+}

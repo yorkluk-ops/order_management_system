@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO orderProducts (orderId, productId, productName, productSku, quantity, unitPrice) VALUES \n(2070001, 300001, 'UPANG UP920 PLUS 寶貝藍', 'UP920PLUS-BB', 1, 3288.00),\n(2070002, 30007, 'UP920 淺灰色', 'UP920A-LG', 1, 2888.00),\n(2070003, 30003, 'UP920 奶油白色', 'UP920A-VC', 1, 2888.00),\n(2070004, 30003, 'UP920 奶油白色', 'UP920A-VC', 1, 2888.00),\n(2070005, 30003, 'UP920 奶油白色', 'UP920A-VC', 1, 2888.00);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orderProducts (orderId, productId, productName, productSku, quantity, unitPrice) VALUES \n(2070001, 300001, 'UPANG UP920 PLUS 寶貝藍', 'UP920PLUS-BB', 1, 3288.00),\n(2070002, 30007, 'UP920 淺灰色', 'UP920A-LG', 1, 2888.00),\n(2070003, 30003, 'UP920 奶油白色', 'UP920A-VC', 1, 2888.00),\n(2070004, 30003, 'UP920 奶油白色', 'UP920A-VC', 1, 2888.00),\n(2070005, 30003, 'UP920 奶油白色', 'UP920A-VC', 1, 2888.00);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'productSku' in 'field list'"
+  ]
+}

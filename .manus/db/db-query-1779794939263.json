@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, name, sku, price FROM products WHERE name LIKE '%Pixel%' OR name LIKE '%SLIM%' OR name LIKE '%Slim%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, name, sku, price FROM products WHERE name LIKE '%Pixel%' OR name LIKE '%SLIM%' OR name LIKE '%Slim%';",
+  "rows": [
+    {
+      "id": "150001",
+      "name": "Poled UV消毒機 SLIM 白色 3月出貨",
+      "sku": "poled_slim_WH",
+      "price": "0.00"
+    },
+    {
+      "id": "150002",
+      "name": "Poled UV消毒機 SLIM 米色 3月出貨",
+      "sku": "Poled_SLIM__BH",
+      "price": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tsku\tprice\n150001\tPoled UV消毒機 SLIM 白色 3月出貨\tpoled_slim_WH\t0.00\n150002\tPoled UV消毒機 SLIM 米色 3月出貨\tPoled_SLIM__BH\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 1799
+}

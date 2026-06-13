@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, customerEmail, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, shopName, paymentStatus, paidAmount)\nVALUES (\n  '26EGB0349',\n  'Wing Chan',\n  '9843 9233',\n  'wingc0709@gmail.com',\n  1,\n  '其他｜單件產品購買',\n  2630.00,\n  0.00,\n  '屯門置樂花園8座6樓C室',\n  '2026-06-10',\n  'pending',\n  '中原電器 / 原單號: MCECBHXSR / 訂單日期: 2026-06-06',\n  '中原電器行有限公司',\n  'unpaid',\n  0.00\n);\n\nINSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, isGift, unitPrice)\nSELECT id, 30003, 'UP920A-VC', 'UP920 奶油白色', '奶油白色', 1, 'no', 2630.00\nFROM orders WHERE orderNumber = '26EGB0349';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, customerEmail, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, shopName, paymentStatus, paidAmount)\nVALUES (\n  '26EGB0349',\n  'Wing Chan',\n  '9843 9233',\n  'wingc0709@gmail.com',\n  1,\n  '其他｜單件產品購買',\n  2630.00,\n  0.00,\n  '屯門置樂花園8座6樓C室',\n  '2026-06-10',\n  'pending',\n  '中原電器 / 原單號: MCECBHXSR / 訂單日期: 2026-06-06',\n  '中原電器行有限公司',\n  'unpaid',\n  0.00\n);\n\nINSERT INTO orderProducts (orderId, productId, sku, productName, color, quantity, isGift, unitPrice)\nSELECT id, 30003, 'UP920A-VC', 'UP920 奶油白色', '奶油白色', 1, 'no', 2630.00\nFROM orders WHERE orderNumber = '26EGB0349';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2002
+}

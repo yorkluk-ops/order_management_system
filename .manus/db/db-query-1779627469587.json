@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, orderNumber, customerName FROM orders WHERE orderNumber IN ('26EGB0315', '26EGB0316', '26EGB0317', '26EGB0318', '26EGB0319') ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, orderNumber, customerName FROM orders WHERE orderNumber IN ('26EGB0315', '26EGB0316', '26EGB0317', '26EGB0318', '26EGB0319') ORDER BY id;",
+  "rows": [
+    {
+      "id": "2070001",
+      "orderNumber": "26EGB0315",
+      "customerName": "伍先生"
+    },
+    {
+      "id": "2070002",
+      "orderNumber": "26EGB0316",
+      "customerName": "黃先生"
+    },
+    {
+      "id": "2070003",
+      "orderNumber": "26EGB0317",
+      "customerName": "李生"
+    },
+    {
+      "id": "2070004",
+      "orderNumber": "26EGB0318",
+      "customerName": "Ms Chao 莊"
+    },
+    {
+      "id": "2070005",
+      "orderNumber": "26EGB0319",
+      "customerName": "金生"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\n2070001\t26EGB0315\t伍先生\n2070002\t26EGB0316\t黃先生\n2070003\t26EGB0317\t李生\n2070004\t26EGB0318\tMs Chao 莊\n2070005\t26EGB0319\t金生\n",
+  "stderr": "",
+  "execution_time_ms": 1811
+}

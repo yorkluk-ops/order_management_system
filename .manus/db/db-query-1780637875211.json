@@ -1,0 +1,82 @@
+{
+  "query": "SELECT id, name, sku, price FROM products WHERE name LIKE '%UP920%' OR name LIKE '%Shnuggle%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, name, sku, price FROM products WHERE name LIKE '%UP920%' OR name LIKE '%Shnuggle%' LIMIT 20;",
+  "rows": [
+    {
+      "id": "30003",
+      "name": "UP920 奶油白色",
+      "sku": "UP920A-VC",
+      "price": "0.00"
+    },
+    {
+      "id": "30007",
+      "name": "UP920 淺灰色",
+      "sku": "UP920A-LG",
+      "price": "0.00"
+    },
+    {
+      "id": "30008",
+      "name": "Shnuggle 嬰兒沐浴盤 白色",
+      "sku": "SBP-WGY-INT",
+      "price": "0.00"
+    },
+    {
+      "id": "60015",
+      "name": "SHNUGGLE SQUISHY EUCALYPTUS 尿布台",
+      "sku": "SHN-SQS-EUC-RN ",
+      "price": "0.00"
+    },
+    {
+      "id": "60016",
+      "name": " SHNUGGLE SQUISHY GREY 尿布",
+      "sku": "SHN-SQS-GRY-RN",
+      "price": "0.00"
+    },
+    {
+      "id": "60017",
+      "name": "SHNUGGLE SQUISHY TAUPE 尿布台",
+      "sku": "SHN-SQS-TPE-RN ",
+      "price": "0.00"
+    },
+    {
+      "id": "60022",
+      "name": "SHNUGGLE 小夜灯",
+      "sku": "SHN-MOON ",
+      "price": "0.00"
+    },
+    {
+      "id": "60024",
+      "name": "SHNUGGLE 洗澡架",
+      "sku": "SHN-BST-STRP ",
+      "price": "299.00"
+    },
+    {
+      "id": "60025",
+      "name": "SHNUGGLE AIR LITE CRIB - GREY",
+      "sku": "SHN-AIRLTE-GRY-MK ",
+      "price": "0.00"
+    },
+    {
+      "id": "60026",
+      "name": "SHNUGGLE AIR LITE CRIB - TAUPE",
+      "sku": "SHN-AIRLTE-TPE-MK ",
+      "price": "0.00"
+    },
+    {
+      "id": "300001",
+      "name": "UPANG UP920 PLUS 寶貝藍",
+      "sku": "UP920PLUS-BB",
+      "price": "3288.00"
+    },
+    {
+      "id": "390001",
+      "name": "UPANG UP920PLUS-BP 粉紅色",
+      "sku": "UP920PLUS-BP",
+      "price": "3588.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tsku\tprice\n30003\tUP920 奶油白色\tUP920A-VC\t0.00\n30007\tUP920 淺灰色\tUP920A-LG\t0.00\n30008\tShnuggle 嬰兒沐浴盤 白色\tSBP-WGY-INT\t0.00\n60015\tSHNUGGLE SQUISHY EUCALYPTUS 尿布台\tSHN-SQS-EUC-RN \t0.00\n60016\t SHNUGGLE SQUISHY GREY 尿布\tSHN-SQS-GRY-RN\t0.00\n60017\tSHNUGGLE SQUISHY TAUPE 尿布台\tSHN-SQS-TPE-RN \t0.00\n60022\tSHNUGGLE 小夜灯\tSHN-MOON \t0.00\n60024\tSHNUGGLE 洗澡架\tSHN-BST-STRP \t299.00\n60025\tSHNUGGLE AIR LITE CRIB - GREY\tSHN-AIRLTE-GRY-MK \t0.00\n60026\tSHNUGGLE AIR LITE CRIB - TAUPE\tSHN-AIRLTE-TPE-MK \t0.00\n300001\tUPANG UP920 PLUS 寶貝藍\tUP920PLUS-BB\t3288.00\n390001\tUPANG UP920PLUS-BP 粉紅色\tUP920PLUS-BP\t3588.00\n",
+  "stderr": "",
+  "execution_time_ms": 1821
+}

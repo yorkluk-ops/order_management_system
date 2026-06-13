@@ -1,0 +1,20 @@
+{
+  "query": "SELECT o.orderNumber, o.customerName, o.customerPhone, o.orderAmount, o.packageName, o.notes, o.deliveryAddress, o.deliveryDate\nFROM orders o WHERE o.orderNumber = '26EGB0207';\n\nSELECT * FROM orderProducts WHERE orderId = (SELECT id FROM orders WHERE orderNumber = '26EGB0207');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT o.orderNumber, o.customerName, o.customerPhone, o.orderAmount, o.packageName, o.notes, o.deliveryAddress, o.deliveryDate\nFROM orders o WHERE o.orderNumber = '26EGB0207';\n\nSELECT * FROM orderProducts WHERE orderId = (SELECT id FROM orders WHERE orderNumber = '26EGB0207');",
+  "rows": [
+    {
+      "orderNumber": "26EGB0207",
+      "customerName": "chois",
+      "customerPhone": "90392480",
+      "orderAmount": "4780.00",
+      "packageName": "全方位支援套裝(3選2)",
+      "notes": "NULL",
+      "deliveryAddress": "flat f,21/f,block 2,well on garden,tseung kwan o",
+      "deliveryDate": "2026-05-30 00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\tcustomerName\tcustomerPhone\torderAmount\tpackageName\tnotes\tdeliveryAddress\tdeliveryDate\n26EGB0207\tchois\t90392480\t4780.00\t全方位支援套裝(3選2)\tNULL\tflat f,21/f,block 2,well on garden,tseung kwan o\t2026-05-30 00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 1943
+}

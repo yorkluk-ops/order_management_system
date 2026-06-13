@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, orderNumber, customerName, customerPhone, deliveryDate, notes FROM orders WHERE orderNumber = '26EGB0347';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT id, orderNumber, customerName, customerPhone, deliveryDate, notes FROM orders WHERE orderNumber = '26EGB0347';",
+  "rows": [
+    {
+      "id": "2640001",
+      "orderNumber": "26EGB0347",
+      "customerName": "ADA",
+      "customerPhone": "98713738",
+      "deliveryDate": "2026-06-06 00:00:00",
+      "notes": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\tcustomerPhone\tdeliveryDate\tnotes\n2640001\t26EGB0347\tADA\t98713738\t2026-06-06 00:00:00\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1808
+}

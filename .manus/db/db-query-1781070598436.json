@@ -1,0 +1,45 @@
+{
+  "query": "\nSELECT id, name, sku FROM products WHERE name LIKE '%棒棒糖%' OR name LIKE '%糖果%';\nSHOW COLUMNS FROM orders;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT id, name, sku FROM products WHERE name LIKE '%棒棒糖%' OR name LIKE '%糖果%';\nSHOW COLUMNS FROM orders;\n",
+  "rows": [
+    {
+      "id": "270003",
+      "name": "POLED AIRLUV4 棒棒糖燕麥拿鐵",
+      "sku": "5202111"
+    },
+    {
+      "id": "270004",
+      "name": "POLED AIRLUV4 棒棒糖跳跳糖",
+      "sku": "5202112"
+    }
+  ],
+  "messages": [
+    "Field\tType\tNull\tKey\tDefault\tExtra",
+    "id\tint\tNO\tPRI\tNULL\tauto_increment",
+    "orderNumber\tvarchar(32)\tNO\tUNI\tNULL\t",
+    "customerName\tvarchar(255)\tNO\t\tNULL\t",
+    "customerPhone\tvarchar(50)\tNO\t\tNULL\t",
+    "customerEmail\tvarchar(320)\tYES\t\tNULL\t",
+    "packageId\tint\tNO\t\tNULL\t",
+    "packageName\tvarchar(255)\tNO\t\tNULL\t",
+    "packageVariant\tvarchar(255)\tYES\t\tNULL\t",
+    "orderAmount\tdecimal(10,2)\tNO\t\tNULL\t",
+    "commission\tdecimal(10,2)\tNO\t\tNULL\t",
+    "deliveryAddress\ttext\tNO\t\tNULL\t",
+    "deliveryDate\ttimestamp\tYES\t\tNULL\t",
+    "deliveryTimeSlot\tvarchar(50)\tYES\t\tNULL\t",
+    "status\tenum('pending','confirmed','delivering','completed','cancelled')\tNO\t\tpending\t",
+    "notes\ttext\tYES\t\tNULL\t",
+    "createdAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t",
+    "updatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+    "createdBy\tint\tYES\t\tNULL\t",
+    "trackingNumber\tvarchar(100)\tYES\t\tNULL\t",
+    "paymentStatus\tenum('unpaid','partial','paid')\tNO\t\tunpaid\t",
+    "paidAmount\tdecimal(10,2)\tNO\t\t0\t",
+    "customerId\tint\tYES\t\tNULL\t",
+    "shopName\tvarchar(255)\tNO\t\tReadyGo HK\t"
+  ],
+  "stdout": "id\tname\tsku\n270003\tPOLED AIRLUV4 棒棒糖燕麥拿鐵\t5202111\n270004\tPOLED AIRLUV4 棒棒糖跳跳糖\t5202112\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\norderNumber\tvarchar(32)\tNO\tUNI\tNULL\t\ncustomerName\tvarchar(255)\tNO\t\tNULL\t\ncustomerPhone\tvarchar(50)\tNO\t\tNULL\t\ncustomerEmail\tvarchar(320)\tYES\t\tNULL\t\npackageId\tint\tNO\t\tNULL\t\npackageName\tvarchar(255)\tNO\t\tNULL\t\npackageVariant\tvarchar(255)\tYES\t\tNULL\t\norderAmount\tdecimal(10,2)\tNO\t\tNULL\t\ncommission\tdecimal(10,2)\tNO\t\tNULL\t\ndeliveryAddress\ttext\tNO\t\tNULL\t\ndeliveryDate\ttimestamp\tYES\t\tNULL\t\ndeliveryTimeSlot\tvarchar(50)\tYES\t\tNULL\t\nstatus\tenum('pending','confirmed','delivering','completed','cancelled')\tNO\t\tpending\t\nnotes\ttext\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\ncreatedBy\tint\tYES\t\tNULL\t\ntrackingNumber\tvarchar(100)\tYES\t\tNULL\t\npaymentStatus\tenum('unpaid','partial','paid')\tNO\t\tunpaid\t\npaidAmount\tdecimal(10,2)\tNO\t\t0\t\ncustomerId\tint\tYES\t\tNULL\t\nshopName\tvarchar(255)\tNO\t\tReadyGo HK\t\n",
+  "stderr": "",
+  "execution_time_ms": 2040
+}

@@ -1,0 +1,25 @@
+{
+  "query": "SELECT \n  MONTH(o.deliveryDate) as delivery_month,\n  SUM(CASE WHEN op.productName LIKE '%UP920%' THEN op.quantity ELSE 0 END) as UP920_count,\n  SUM(CASE WHEN op.productName LIKE '%UP911%' THEN op.quantity ELSE 0 END) as UP911_count\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE o.deliveryDate >= '2026-06-01' AND o.deliveryDate < '2026-09-01'\nAND o.status != 'cancelled'\nAND (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%')\nGROUP BY MONTH(o.deliveryDate)\nORDER BY MONTH(o.deliveryDate);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT \n  MONTH(o.deliveryDate) as delivery_month,\n  SUM(CASE WHEN op.productName LIKE '%UP920%' THEN op.quantity ELSE 0 END) as UP920_count,\n  SUM(CASE WHEN op.productName LIKE '%UP911%' THEN op.quantity ELSE 0 END) as UP911_count\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE o.deliveryDate >= '2026-06-01' AND o.deliveryDate < '2026-09-01'\nAND o.status != 'cancelled'\nAND (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%')\nGROUP BY MONTH(o.deliveryDate)\nORDER BY MONTH(o.deliveryDate);",
+  "rows": [
+    {
+      "delivery_month": "6",
+      "UP920_count": "27",
+      "UP911_count": "6"
+    },
+    {
+      "delivery_month": "7",
+      "UP920_count": "14",
+      "UP911_count": "2"
+    },
+    {
+      "delivery_month": "8",
+      "UP920_count": "12",
+      "UP911_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "delivery_month\tUP920_count\tUP911_count\n6\t27\t6\n7\t14\t2\n8\t12\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1804
+}

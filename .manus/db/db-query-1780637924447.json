@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, customerEmail, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, shopName, paymentStatus, paidAmount)\nVALUES (\n  '26EGB0346',\n  'Twins Baby C',\n  '',\n  NULL,\n  1,\n  '其他｜單件產品購買',\n  5720.00,\n  0.00,\n  'FLAT /RM G 15/F, 403 Castle Peak Road, Kwai Chung NT',\n  '2026-06-06',\n  'pending',\n  'Invoice No: 25UD00110 / Delivery Note: 24UD0635 / 送貨日: 06/06/2026',\n  'Twins Baby C (70608721)',\n  'unpaid',\n  0.00\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, customerEmail, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, shopName, paymentStatus, paidAmount)\nVALUES (\n  '26EGB0346',\n  'Twins Baby C',\n  '',\n  NULL,\n  1,\n  '其他｜單件產品購買',\n  5720.00,\n  0.00,\n  'FLAT /RM G 15/F, 403 Castle Peak Road, Kwai Chung NT',\n  '2026-06-06',\n  'pending',\n  'Invoice No: 25UD00110 / Delivery Note: 24UD0635 / 送貨日: 06/06/2026',\n  'Twins Baby C (70608721)',\n  'unpaid',\n  0.00\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1746
+}

@@ -1,0 +1,31 @@
+{
+  "query": "\nSELECT id, orderNumber, shopName, packageId, packageName FROM orders ORDER BY createdAt DESC LIMIT 3;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT id, orderNumber, shopName, packageId, packageName FROM orders ORDER BY createdAt DESC LIMIT 3;\n",
+  "rows": [
+    {
+      "id": "2730001",
+      "orderNumber": "26EGB0350",
+      "shopName": "中原電器",
+      "packageId": "1",
+      "packageName": "其他｜單件產品購買"
+    },
+    {
+      "id": "2700001",
+      "orderNumber": "26EGB0349",
+      "shopName": "中原電器行有限公司",
+      "packageId": "1",
+      "packageName": "其他｜單件產品購買"
+    },
+    {
+      "id": "2670002",
+      "orderNumber": "26EGB0348",
+      "shopName": "中原電器行有限公司",
+      "packageId": "1",
+      "packageName": "其他｜單件產品購買"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tshopName\tpackageId\tpackageName\n2730001\t26EGB0350\t中原電器\t1\t其他｜單件產品購買\n2700001\t26EGB0349\t中原電器行有限公司\t1\t其他｜單件產品購買\n2670002\t26EGB0348\t中原電器行有限公司\t1\t其他｜單件產品購買\n",
+  "stderr": "",
+  "execution_time_ms": 1738
+}

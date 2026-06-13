@@ -1,0 +1,25 @@
+{
+  "query": "\nSELECT \n  o.shopName,\n  SUM(CASE WHEN op.productName LIKE '%S1 Pro%' OR op.productName LIKE '%eufy%S1%Pro%' THEN op.quantity ELSE 0 END) as s1pro_count,\n  SUM(CASE WHEN op.productName LIKE '%E20%' OR op.sku LIKE '%E20%' THEN op.quantity ELSE 0 END) as e20_count\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE op.isGift = 'no'\n  AND (o.shopName LIKE '%ANNIE%' OR o.shopName LIKE '%JOYCE%' OR o.shopName LIKE '%annie%' OR o.shopName LIKE '%joyce%')\n  AND (op.productName LIKE '%S1 Pro%' OR op.productName LIKE '%eufy%S1%Pro%' OR op.productName LIKE '%E20%' OR op.sku LIKE '%E20%')\nGROUP BY o.shopName\nORDER BY o.shopName;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT \n  o.shopName,\n  SUM(CASE WHEN op.productName LIKE '%S1 Pro%' OR op.productName LIKE '%eufy%S1%Pro%' THEN op.quantity ELSE 0 END) as s1pro_count,\n  SUM(CASE WHEN op.productName LIKE '%E20%' OR op.sku LIKE '%E20%' THEN op.quantity ELSE 0 END) as e20_count\nFROM orders o\nJOIN orderProducts op ON o.id = op.orderId\nWHERE op.isGift = 'no'\n  AND (o.shopName LIKE '%ANNIE%' OR o.shopName LIKE '%JOYCE%' OR o.shopName LIKE '%annie%' OR o.shopName LIKE '%joyce%')\n  AND (op.productName LIKE '%S1 Pro%' OR op.productName LIKE '%eufy%S1%Pro%' OR op.productName LIKE '%E20%' OR op.sku LIKE '%E20%')\nGROUP BY o.shopName\nORDER BY o.shopName;\n",
+  "rows": [
+    {
+      "shopName": "SOGO ANNIE",
+      "s1pro_count": "3",
+      "e20_count": "1"
+    },
+    {
+      "shopName": "SOGO CWB JOYCE",
+      "s1pro_count": "0",
+      "e20_count": "1"
+    },
+    {
+      "shopName": "SOGO JOYCE",
+      "s1pro_count": "0",
+      "e20_count": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "shopName\ts1pro_count\te20_count\nSOGO ANNIE\t3\t1\nSOGO CWB JOYCE\t0\t1\nSOGO JOYCE\t0\t2\n",
+  "stderr": "",
+  "execution_time_ms": 1781
+}

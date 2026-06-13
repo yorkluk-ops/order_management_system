@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, paymentStatus, shopName)\nVALUES ('26EGB0332', '白先生', '91821237', 1, '其他｜單件產品購買', 3288.00, 0.00, '柴灣34號翠灣華大廈12樓F室', '2026-06-01', 'pending', 'SOGO CWB Annie / UP920 (白色) / 贈品：自提/送貨 / 電話2: 97115176', 'paid', 'SOGO ANNIE');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, customerPhone, packageId, packageName, orderAmount, commission, deliveryAddress, deliveryDate, status, notes, paymentStatus, shopName)\nVALUES ('26EGB0332', '白先生', '91821237', 1, '其他｜單件產品購買', 3288.00, 0.00, '柴灣34號翠灣華大廈12樓F室', '2026-06-01', 'pending', 'SOGO CWB Annie / UP920 (白色) / 贈品：自提/送貨 / 電話2: 97115176', 'paid', 'SOGO ANNIE');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1812
+}

@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO orders (orderNumber, customerName, phone, address, orderDate, deliveryDate, totalAmount, status, source, salesPerson, paymentMethod, notes)\nVALUES ('26EGB0331', '大仕先生', '6940 3663', '元朗采順路9號朗晴園1座10樓T房', '2026-05-28', '2026-11-17', 3587, 'pending', 'SOGO ANNIE', 'Annie', 'mastercard', '贈品：體溫計/送貨、支架/送貨、鋼杯');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute INSERT INTO orders (orderNumber, customerName, phone, address, orderDate, deliveryDate, totalAmount, status, source, salesPerson, paymentMethod, notes)\nVALUES ('26EGB0331', '大仕先生', '6940 3663', '元朗采順路9號朗晴園1座10樓T房', '2026-05-28', '2026-11-17', 3587, 'pending', 'SOGO ANNIE', 'Annie', 'mastercard', '贈品：體溫計/送貨、支架/送貨、鋼杯');",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'phone' in 'field list'"
+  ]
+}

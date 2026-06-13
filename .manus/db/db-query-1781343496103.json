@@ -1,0 +1,263 @@
+{
+  "query": "\nSELECT \n  o.shopName AS 商鋪,\n  op.sku AS SKU,\n  op.productName AS 產品名稱,\n  op.color AS 顏色,\n  o.orderNumber AS 訂單號,\n  o.customerName AS 客戶姓名,\n  o.deliveryDate AS 送貨日期,\n  o.status AS 狀態,\n  op.quantity AS 數量\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%' OR op.sku LIKE '%UP920%' OR op.sku LIKE '%UP911%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\n  AND o.deliveryDate > '2026-06-16'\nORDER BY o.shopName, op.sku, o.deliveryDate\nLIMIT 30 OFFSET 30;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT \n  o.shopName AS 商鋪,\n  op.sku AS SKU,\n  op.productName AS 產品名稱,\n  op.color AS 顏色,\n  o.orderNumber AS 訂單號,\n  o.customerName AS 客戶姓名,\n  o.deliveryDate AS 送貨日期,\n  o.status AS 狀態,\n  op.quantity AS 數量\nFROM orderProducts op\nJOIN orders o ON op.orderId = o.id\nWHERE (op.productName LIKE '%UP920%' OR op.productName LIKE '%UP911%' OR op.sku LIKE '%UP920%' OR op.sku LIKE '%UP911%')\n  AND op.isGift = 'no'\n  AND o.status NOT IN ('completed', 'cancelled')\n  AND o.deliveryDate > '2026-06-16'\nORDER BY o.shopName, op.sku, o.deliveryDate\nLIMIT 30 OFFSET 30;\n",
+  "rows": [
+    {
+      "商鋪": "SOGO ANNIE",
+      "SKU": "UP920PLUS-BP",
+      "產品名稱": "UPANG UP920PLUS 粉紅色",
+      "顏色": "粉紅色",
+      "訂單號": "26EGB0322",
+      "客戶姓名": "Ms Man",
+      "送貨日期": "2026-09-12 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "sogo CWB",
+      "SKU": "UP920A-LG",
+      "產品名稱": "UP920 淺灰色",
+      "顏色": "淺灰色",
+      "訂單號": "26EGB0266",
+      "客戶姓名": "kit ying",
+      "送貨日期": "2026-06-18 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-LG",
+      "產品名稱": "UP920 淺灰色",
+      "顏色": "淺灰色",
+      "訂單號": "26EGB0282",
+      "客戶姓名": "翟生",
+      "送貨日期": "2026-06-27 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-LG",
+      "產品名稱": "UP920 淺灰色",
+      "顏色": "淺灰色",
+      "訂單號": "26EGB0300",
+      "客戶姓名": "EUGENA",
+      "送貨日期": "2026-07-29 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-LG",
+      "產品名稱": "UP920 淺灰色",
+      "顏色": "淺灰色",
+      "訂單號": "26EGB0284",
+      "客戶姓名": "朱小姐",
+      "送貨日期": "2026-08-29 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-LG",
+      "產品名稱": "UP920 淺灰色",
+      "顏色": "淺灰色",
+      "訂單號": "26EGB0316",
+      "客戶姓名": "黃先生",
+      "送貨日期": "2026-09-19 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0287",
+      "客戶姓名": "YIM",
+      "送貨日期": "2026-06-20 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0317",
+      "客戶姓名": "李生",
+      "送貨日期": "2026-07-04 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0283",
+      "客戶姓名": "STEPHANIE",
+      "送貨日期": "2026-07-11 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0318",
+      "客戶姓名": "Ms Chao 莊",
+      "送貨日期": "2026-08-19 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0325",
+      "客戶姓名": "何小姐/曾生",
+      "送貨日期": "2026-08-24 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0319",
+      "客戶姓名": "金生",
+      "送貨日期": "2026-08-29 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0336",
+      "客戶姓名": "WONG",
+      "送貨日期": "2026-09-05 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0286",
+      "客戶姓名": "MR CHAN",
+      "送貨日期": "2026-10-02 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0335",
+      "客戶姓名": "Joyce",
+      "送貨日期": "2026-10-14 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920PLUS-BB",
+      "產品名稱": "UPANG UP920 PLUS 寶貝藍",
+      "顏色": "寶貝藍",
+      "訂單號": "26EGB0324",
+      "客戶姓名": "Ms Lee",
+      "送貨日期": "2026-07-03 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920PLUS-BB",
+      "產品名稱": "UPANG UP920 PLUS 寶貝藍",
+      "顏色": "寶貝藍",
+      "訂單號": "26EGB0327",
+      "客戶姓名": "董生",
+      "送貨日期": "2026-08-01 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920PLUS-BB",
+      "產品名稱": "UPANG UP920 PLUS 寶貝藍",
+      "顏色": "寶貝藍",
+      "訂單號": "26EGB0315",
+      "客戶姓名": "伍先生",
+      "送貨日期": "2026-08-22 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO JOYCE",
+      "SKU": "UP920PLUS-BB",
+      "產品名稱": "UPANG UP920 PLUS 寶貝藍",
+      "顏色": "寶貝藍",
+      "訂單號": "26EGB0334",
+      "客戶姓名": "JESSIE ",
+      "送貨日期": "2026-09-05 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO KTK",
+      "SKU": "UP920A-LG",
+      "產品名稱": "UP920 淺灰色",
+      "顏色": "淺灰色",
+      "訂單號": "26EGB0351",
+      "客戶姓名": "徐小姐",
+      "送貨日期": "2026-08-04 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO KTK",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0353",
+      "客戶姓名": "SO KAWAI",
+      "送貨日期": "2026-08-29 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "SOGO MEIMEI",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0291",
+      "客戶姓名": "霍先生 ",
+      "送貨日期": "2026-07-11 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    },
+    {
+      "商鋪": "中原電器行有限公司",
+      "SKU": "UP920A-VC",
+      "產品名稱": "UP920 奶油白色",
+      "顏色": "奶油白色",
+      "訂單號": "26EGB0348",
+      "客戶姓名": "Karen Li",
+      "送貨日期": "2026-07-30 00:00:00",
+      "狀態": "pending",
+      "數量": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "商鋪\tSKU\t產品名稱\t顏色\t訂單號\t客戶姓名\t送貨日期\t狀態\t數量\nSOGO ANNIE\tUP920PLUS-BP\tUPANG UP920PLUS 粉紅色\t粉紅色\t26EGB0322\tMs Man\t2026-09-12 00:00:00\tpending\t1\nsogo CWB\tUP920A-LG\tUP920 淺灰色\t淺灰色\t26EGB0266\tkit ying\t2026-06-18 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-LG\tUP920 淺灰色\t淺灰色\t26EGB0282\t翟生\t2026-06-27 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-LG\tUP920 淺灰色\t淺灰色\t26EGB0300\tEUGENA\t2026-07-29 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-LG\tUP920 淺灰色\t淺灰色\t26EGB0284\t朱小姐\t2026-08-29 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-LG\tUP920 淺灰色\t淺灰色\t26EGB0316\t黃先生\t2026-09-19 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0287\tYIM\t2026-06-20 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0317\t李生\t2026-07-04 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0283\tSTEPHANIE\t2026-07-11 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0318\tMs Chao 莊\t2026-08-19 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0325\t何小姐/曾生\t2026-08-24 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0319\t金生\t2026-08-29 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0336\tWONG\t2026-09-05 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0286\tMR CHAN\t2026-10-02 00:00:00\tpending\t1\nSOGO JOYCE\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0335\tJoyce\t2026-10-14 00:00:00\tpending\t1\nSOGO JOYCE\tUP920PLUS-BB\tUPANG UP920 PLUS 寶貝藍\t寶貝藍\t26EGB0324\tMs Lee\t2026-07-03 00:00:00\tpending\t1\nSOGO JOYCE\tUP920PLUS-BB\tUPANG UP920 PLUS 寶貝藍\t寶貝藍\t26EGB0327\t董生\t2026-08-01 00:00:00\tpending\t1\nSOGO JOYCE\tUP920PLUS-BB\tUPANG UP920 PLUS 寶貝藍\t寶貝藍\t26EGB0315\t伍先生\t2026-08-22 00:00:00\tpending\t1\nSOGO JOYCE\tUP920PLUS-BB\tUPANG UP920 PLUS 寶貝藍\t寶貝藍\t26EGB0334\tJESSIE \t2026-09-05 00:00:00\tpending\t1\nSOGO KTK\tUP920A-LG\tUP920 淺灰色\t淺灰色\t26EGB0351\t徐小姐\t2026-08-04 00:00:00\tpending\t1\nSOGO KTK\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0353\tSO KAWAI\t2026-08-29 00:00:00\tpending\t1\nSOGO MEIMEI\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0291\t霍先生 \t2026-07-11 00:00:00\tpending\t1\n中原電器行有限公司\tUP920A-VC\tUP920 奶油白色\t奶油白色\t26EGB0348\tKaren Li\t2026-07-30 00:00:00\tpending\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1763
+}

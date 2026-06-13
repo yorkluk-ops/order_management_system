@@ -1,0 +1,35 @@
+{
+  "query": "SELECT * FROM orders WHERE orderNumber = '26EGB0330' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT * FROM orders WHERE orderNumber = '26EGB0330' LIMIT 1;",
+  "rows": [
+    {
+      "id": "2220001",
+      "orderNumber": "26EGB0330",
+      "customerName": "Mr Lai",
+      "customerPhone": "63566646",
+      "customerEmail": "NULL",
+      "packageId": "1",
+      "packageName": "其他｜單件產品購買",
+      "packageVariant": "NULL",
+      "orderAmount": "2688.00",
+      "commission": "0.00",
+      "deliveryAddress": "沙田馬鞍山富安花園1座2樓F室",
+      "deliveryDate": "2026-05-30 00:00:00",
+      "deliveryTimeSlot": "NULL",
+      "status": "delivering",
+      "notes": "SOGO Kai Tak / 電話2: 51152835 / 1st Pick: 5月30日星期六 / 2nd: 5月31日星期日 / 之中之選一日(確認了)",
+      "createdAt": "2026-05-26 11:29:12",
+      "updatedAt": "2026-05-28 06:17:49",
+      "createdBy": "1",
+      "trackingNumber": "JDX054549736627",
+      "paymentStatus": "unpaid",
+      "paidAmount": "0.00",
+      "customerId": "NULL",
+      "shopName": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\tcustomerPhone\tcustomerEmail\tpackageId\tpackageName\tpackageVariant\torderAmount\tcommission\tdeliveryAddress\tdeliveryDate\tdeliveryTimeSlot\tstatus\tnotes\tcreatedAt\tupdatedAt\tcreatedBy\ttrackingNumber\tpaymentStatus\tpaidAmount\tcustomerId\tshopName\n2220001\t26EGB0330\tMr Lai\t63566646\tNULL\t1\t其他｜單件產品購買\tNULL\t2688.00\t0.00\t沙田馬鞍山富安花園1座2樓F室\t2026-05-30 00:00:00\tNULL\tdelivering\tSOGO Kai Tak / 電話2: 51152835 / 1st Pick: 5月30日星期六 / 2nd: 5月31日星期日 / 之中之選一日(確認了)\t2026-05-26 11:29:12\t2026-05-28 06:17:49\t1\tJDX054549736627\tunpaid\t0.00\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 1768
+}

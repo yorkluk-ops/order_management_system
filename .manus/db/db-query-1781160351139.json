@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT DISTINCT shopName FROM orders WHERE shopName LIKE '%JOYCE%' OR shopName LIKE '%ANNIE%' OR shopName LIKE '%KTK%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT DISTINCT shopName FROM orders WHERE shopName LIKE '%JOYCE%' OR shopName LIKE '%ANNIE%' OR shopName LIKE '%KTK%';\n",
+  "rows": [
+    {
+      "shopName": "sogo ktk"
+    },
+    {
+      "shopName": "SOGO CWB JOYCE"
+    },
+    {
+      "shopName": "SOGO JOYCE"
+    },
+    {
+      "shopName": "SOGO ANNIE"
+    }
+  ],
+  "messages": [],
+  "stdout": "shopName\nsogo ktk\nSOGO CWB JOYCE\nSOGO JOYCE\nSOGO ANNIE\n",
+  "stderr": "",
+  "execution_time_ms": 1813
+}

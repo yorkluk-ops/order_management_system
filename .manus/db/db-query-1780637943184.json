@@ -1,0 +1,22 @@
+{
+  "query": "-- Check orderProducts structure first\nSELECT * FROM orderProducts WHERE orderId = 2580001 LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute -- Check orderProducts structure first\nSELECT * FROM orderProducts WHERE orderId = 2580001 LIMIT 1;",
+  "rows": [
+    {
+      "id": "6720002",
+      "orderId": "2580001",
+      "productId": "NULL",
+      "sku": "UP920-WH",
+      "productName": "UP920 奶油白色",
+      "color": "奶油白色",
+      "quantity": "1",
+      "createdAt": "2026-06-05 05:34:34",
+      "isGift": "no",
+      "unitPrice": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderId\tproductId\tsku\tproductName\tcolor\tquantity\tcreatedAt\tisGift\tunitPrice\n6720002\t2580001\tNULL\tUP920-WH\tUP920 奶油白色\t奶油白色\t1\t2026-06-05 05:34:34\tno\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 1532
+}

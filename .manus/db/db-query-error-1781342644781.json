@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT * FROM shopInventory WHERE sku = 'UP920A-VC' LIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute \nSELECT * FROM shopInventory WHERE sku = 'UP920A-VC' LIMIT 20;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'sku' in 'where clause'"
+  ]
+}

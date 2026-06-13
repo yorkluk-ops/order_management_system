@@ -1,0 +1,25 @@
+{
+  "query": "SELECT orderNumber FROM orders ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZFoDM6yqu2tY1hb.dd1d39030844 --database jMRCeFnSdEfaYMvUXfCyak --execute SELECT orderNumber FROM orders ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "orderNumber": "26EGB0307"
+    },
+    {
+      "orderNumber": "26EGB0306"
+    },
+    {
+      "orderNumber": "26EGB0305"
+    },
+    {
+      "orderNumber": "26EGB0304"
+    },
+    {
+      "orderNumber": "26EGB0303"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderNumber\n26EGB0307\n26EGB0306\n26EGB0305\n26EGB0304\n26EGB0303\n",
+  "stderr": "",
+  "execution_time_ms": 1882
+}
