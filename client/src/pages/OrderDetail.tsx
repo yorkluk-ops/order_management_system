@@ -121,6 +121,9 @@ export default function OrderDetail() {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showStockWarning, setShowStockWarning] = useState(false);
+  const [stockShortages, setStockShortages] = useState<{ productName: string; sku: string; required: number; available: number }[]>([]);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   const orderId = parseInt(params.id || "0");
   
@@ -264,11 +267,39 @@ export default function OrderDetail() {
     },
   });
 
-  const handleStatusChange = (newStatus: string) => {
+  // 庫存預檢 query（按需手動觸發）
+  const checkStockQuery = trpc.orders.checkDeliveryStock.useQuery(
+    { id: orderId },
+    { enabled: false }
+  );
+
+  const handleStatusChange = async (newStatus: string) => {
+    // 如果是轉為「配送中」，先檢查奧創庫存
+    if (newStatus === "delivering") {
+      try {
+        const result = await checkStockQuery.refetch();
+        const data = result.data;
+        if (data && !data.sufficient) {
+          setStockShortages(data.shortages);
+          setPendingStatus(newStatus);
+          setShowStockWarning(true);
+          return; // 展示警告，暂停更新
+        }
+      } catch (e) {
+        // 預檢失敗則繼續正常流程
+      }
+    }
     updateStatusMutation.mutate({
       id: orderId,
       status: newStatus as "pending" | "confirmed" | "delivering" | "completed" | "cancelled",
     });
+  };
+
+  const handleForceDelivering = () => {
+    // 用戶確認強制出貨（不應該發生，後端會再次檢查）
+    setShowStockWarning(false);
+    // 後端已有庫存不足保護，此处不進行強制更新
+    toast.error("庫存不足，無法轉為配送中。請先补充奇創庫存。");
   };
 
   const handleDelete = () => {
@@ -873,6 +904,43 @@ export default function OrderDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Stock Warning Dialog */}
+      <AlertDialog open={showStockWarning} onOpenChange={setShowStockWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              ⚠️ 奧創數碼有限公司庫存不足
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  以下產品在奧創數碼有限公司的庫存不足，無法轉為「配送中」：
+                </p>
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                  {stockShortages.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{s.productName}</span>
+                      <span className="text-destructive font-semibold">
+                        庫存 {s.available} 件 / 需要 {s.required} 件
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-amber-600 font-medium">
+                  請先在「商鋪庫存」補充奧創數碼有限公司的庫存，再轉為配送中。
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowStockWarning(false)}>
+              知道了
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

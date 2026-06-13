@@ -1271,3 +1271,93 @@ export async function getStockTransferItems(transferId: number): Promise<StockTr
     .from(stockTransferItems)
     .where(eq(stockTransferItems.transferId, transferId));
 }
+
+// ==================== Stocking Plan ====================
+
+export interface StockingPlanItem {
+  sku: string;
+  productName: string;
+  color: string | null;
+  totalQty: number;
+  pendingQty: number;       // 待處理
+  confirmedQty: number;     // 已確認
+  deliveringQty: number;    // 配送中
+  byShop: { shopName: string; qty: number }[];
+  byDate: { date: string; qty: number }[];
+}
+
+export async function getStockingPlan(dateFrom: Date, dateTo: Date): Promise<StockingPlanItem[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.select({
+    sku: orderProducts.sku,
+    productName: orderProducts.productName,
+    color: orderProducts.color,
+    quantity: orderProducts.quantity,
+    isGift: orderProducts.isGift,
+    status: orders.status,
+    shopName: orders.shopName,
+    deliveryDate: orders.deliveryDate,
+  })
+    .from(orderProducts)
+    .innerJoin(orders, eq(orderProducts.orderId, orders.id))
+    .where(
+      and(
+        gte(orders.deliveryDate, dateFrom),
+        lte(orders.deliveryDate, dateTo),
+        sql`${orders.status} NOT IN ('cancelled', 'completed')`
+      )
+    );
+
+  const aggregated: { [sku: string]: StockingPlanItem } = {};
+
+  for (const row of result) {
+    if (!row.deliveryDate) continue;
+    if (row.isGift === 'yes') continue; // 贈品不計入備貨
+
+    if (!aggregated[row.sku]) {
+      aggregated[row.sku] = {
+        sku: row.sku,
+        productName: row.productName,
+        color: row.color,
+        totalQty: 0,
+        pendingQty: 0,
+        confirmedQty: 0,
+        deliveringQty: 0,
+        byShop: [],
+        byDate: [],
+      };
+    }
+
+    const item = aggregated[row.sku];
+    item.totalQty += row.quantity;
+
+    if (row.status === 'pending') item.pendingQty += row.quantity;
+    else if (row.status === 'confirmed') item.confirmedQty += row.quantity;
+    else if (row.status === 'delivering') item.deliveringQty += row.quantity;
+
+    // 按商鋪聚合
+    const shopName = row.shopName || '其他';
+    const shopEntry = item.byShop.find(s => s.shopName === shopName);
+    if (shopEntry) shopEntry.qty += row.quantity;
+    else item.byShop.push({ shopName, qty: row.quantity });
+
+    // 按日期聚合
+    const dateStr = new Date(row.deliveryDate).toISOString().split('T')[0];
+    const dateEntry = item.byDate.find(d => d.date === dateStr);
+    if (dateEntry) dateEntry.qty += row.quantity;
+    else item.byDate.push({ date: dateStr, qty: row.quantity });
+  }
+
+  // 排序：按總數量降序
+  const items = Object.values(aggregated).sort((a, b) => b.totalQty - a.totalQty);
+
+  // 各子陣列排序
+  for (const item of items) {
+    item.byShop.sort((a, b) => b.qty - a.qty);
+    item.byDate.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  return items;
+}

@@ -13,6 +13,7 @@ import Export from "./pages/Export";
 import AIAnalysis from "./pages/AIAnalysis";
 import ProductList from "./pages/ProductList";
 import MonthlyDelivery from "./pages/MonthlyDelivery";
+import StockingPlan from "./pages/StockingPlan";
 import PackageList from "./pages/PackageList";
 import CustomerList from "./pages/CustomerList";
 import CustomerDetail from "./pages/CustomerDetail";
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/packages" component={PackageList} />
       <Route path="/products" component={ProductList} />
       <Route path="/monthly-delivery" component={MonthlyDelivery} />
+      <Route path="/stocking-plan" component={StockingPlan} />
       <Route path="/customers" component={CustomerList} />
       <Route path="/customers/:id" component={CustomerDetail} />
       <Route path="/shops" component={ShopList} />

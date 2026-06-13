@@ -26,6 +26,7 @@ import {
   updateProductStockBySku,
   updateProductStock,
   getMonthlyDeliveryReport,
+  getStockingPlan,
   getAllPackages,
   getPackageById,
   getPackageByCode,
@@ -506,6 +507,40 @@ export const appRouter = router({
         return getOrderProducts(input.orderId);
       }),
 
+    // 配送前庫存預檢：檢查奧創數碼有限公司庫存是否足夠
+    checkDeliveryStock: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const order = await getOrderById(input.id);
+        if (!order) throw new Error("訂單不存在");
+
+        const ULTRON_SHOP_NAME = "奧創數碼有限公司";
+        const ultronShop = await getShopByName(ULTRON_SHOP_NAME);
+        if (!ultronShop) return { sufficient: true, shortages: [] };
+
+        const orderProductsList = await getOrderProducts(input.id);
+        const shortages: { productName: string; sku: string; required: number; available: number }[] = [];
+
+        for (const product of orderProductsList) {
+          if (product.isGift === "yes") continue;
+          const dbProduct = await getProductBySku(product.sku);
+          if (!dbProduct) continue;
+
+          const inv = await getShopInventoryItem(dbProduct.id, ultronShop.id);
+          const available = inv?.quantity ?? 0;
+          if (available < product.quantity) {
+            shortages.push({
+              productName: product.productName,
+              sku: product.sku,
+              required: product.quantity,
+              available,
+            });
+          }
+        }
+
+        return { sufficient: shortages.length === 0, shortages };
+      }),
+
     updateStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
@@ -532,6 +567,27 @@ export const appRouter = router({
           const ultronShop = await getShopByName(ULTRON_SHOP_NAME);
           if (ultronShop) {
             const orderProductsList = await getOrderProducts(input.id);
+
+            // 出貨前先檢查庫存是否足夠（防止庫存變負數）
+            if (isGoingToDelivering) {
+              const shortages: string[] = [];
+              for (const product of orderProductsList) {
+                if (product.isGift === "yes") continue;
+                const dbProduct = await getProductBySku(product.sku);
+                if (!dbProduct) continue;
+                const inv = await getShopInventoryItem(dbProduct.id, ultronShop.id);
+                const available = inv?.quantity ?? 0;
+                if (available < product.quantity) {
+                  shortages.push(`${product.productName}（庫存: ${available}，需要: ${product.quantity}）`);
+                }
+              }
+              if (shortages.length > 0) {
+                // 撤销剛才的狀態更新
+                await updateOrderStatus(input.id, prevStatus as any);
+                throw new Error(`庫存不足，無法轉為配送中\n\n${shortages.join("\n")}`);
+              }
+            }
+
             for (const product of orderProductsList) {
               if (product.isGift === "yes") continue; // 贈品不計
               const dbProduct = await getProductBySku(product.sku);
@@ -877,6 +933,18 @@ ${stats.packageStats.map(p => `- ${p.packageName}: ${p.count}單, $${p.sales}`).
       }))
       .query(async ({ input }) => {
         return getMonthlyDeliveryReport(input.year);
+      }),
+
+    // 備貨計劃：按日期範圍查看待送貨產品數量
+    stockingPlan: protectedProcedure
+      .input(z.object({
+        dateFrom: z.string(), // YYYY-MM-DD
+        dateTo: z.string(),   // YYYY-MM-DD
+      }))
+      .query(async ({ input }) => {
+        const from = new Date(input.dateFrom + 'T00:00:00.000Z');
+        const to = new Date(input.dateTo + 'T23:59:59.999Z');
+        return getStockingPlan(from, to);
       }),
   }),
 

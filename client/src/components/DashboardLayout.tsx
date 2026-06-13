@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, ClipboardList, PlusCircle, FileSpreadsheet, Sparkles, Package, CalendarDays, Boxes, Users, Store, ShoppingCart, ArrowRightLeft, Warehouse } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, ClipboardList, PlusCircle, FileSpreadsheet, Sparkles, Package, CalendarDays, Boxes, Users, Store, ShoppingCart, ArrowRightLeft, Warehouse, Truck } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -39,6 +39,7 @@ const menuItems = [
   { icon: ShoppingCart, label: "採購管理", path: "/purchase-orders" },
   { icon: ArrowRightLeft, label: "庫存調撥", path: "/stock-transfers" },
   { icon: CalendarDays, label: "月份送貨統計", path: "/monthly-delivery" },
+  { icon: Truck, label: "備貨計劃", path: "/stocking-plan" },
   { icon: FileSpreadsheet, label: "匯出報表", path: "/export" },
   { icon: Sparkles, label: "AI 分析", path: "/ai-analysis" },
 ];
