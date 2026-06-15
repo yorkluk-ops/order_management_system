@@ -1314,8 +1314,6 @@ export async function getStockingPlan(dateFrom: Date, dateTo: Date): Promise<Sto
 
   for (const row of result) {
     if (!row.deliveryDate) continue;
-    if (row.isGift === 'yes') continue; // 贈品不計入備貨
-
     if (!aggregated[row.sku]) {
       aggregated[row.sku] = {
         sku: row.sku,
