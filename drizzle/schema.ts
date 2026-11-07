@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, uniqueIndex } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -346,3 +346,24 @@ export const stockTransferItems = mysqlTable("stockTransferItems", {
 
 export type StockTransferItem = typeof stockTransferItems.$inferSelect;
 export type InsertStockTransferItem = typeof stockTransferItems.$inferInsert;
+
+/**
+ * External storefront imports.
+ * One row per (platform, externalOrderId) so a bot retry cannot create a second OMS order
+ * or deduct stock twice. Shop ids are not stored; shopName is resolved at import time.
+ */
+export const externalOrders = mysqlTable("externalOrders", {
+  id: int("id").autoincrement().primaryKey(),
+  platform: varchar("platform", { length: 32 }).notNull(),
+  externalOrderId: varchar("externalOrderId", { length: 191 }).notNull(),
+  shopName: varchar("shopName", { length: 255 }).notNull(),
+  orderId: int("orderId"),
+  status: mysqlEnum("status", ["processing", "completed"]).default("processing").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("externalOrders_platform_externalOrderId_unique").on(table.platform, table.externalOrderId),
+]);
+
+export type ExternalOrder = typeof externalOrders.$inferSelect;
+export type InsertExternalOrder = typeof externalOrders.$inferInsert;

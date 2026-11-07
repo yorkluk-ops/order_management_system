@@ -11,4 +11,6 @@ export const ENV = {
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
   stripePublishableKey: process.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+  // Bearer token for POST /api/import/orders. Never commit a real value.
+  importApiKey: process.env.OMS_IMPORT_API_KEY ?? "",
 };

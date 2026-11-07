@@ -5,6 +5,7 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStripeWebhook } from "../stripeWebhook";
+import { registerOrderImportRoutes } from "../orderImport";
 import { appRouter } from "../routers";
 import { generateQuotationPdf, generateInvoicePdf, generateReceiptPdf, OrderForPdf } from "../pdfService";
 import { getOrderById, getOrderProducts, getProductById } from "../db";
@@ -43,6 +44,8 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // External storefront order import (Bearer OMS_IMPORT_API_KEY)
+  registerOrderImportRoutes(app);
 
   // PDF generation endpoint - generates PDF, uploads to S3, returns URL
   app.get("/api/pdf/:orderId/:type", async (req, res) => {
