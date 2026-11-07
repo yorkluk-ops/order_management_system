@@ -19,6 +19,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { PasswordLoginForm } from "@/components/PasswordLoginForm";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { LayoutDashboard, LogOut, PanelLeft, ClipboardList, PlusCircle, FileSpreadsheet, Sparkles, Package, CalendarDays, Boxes, Users, Store, ShoppingCart, ArrowRightLeft, Warehouse, Truck } from "lucide-react";
@@ -94,9 +95,7 @@ export default function DashboardLayout({
               登入系統
             </Button>
           ) : (
-            <p className="text-sm text-muted-foreground text-center">
-              尚未設定登入服務（VITE_OAUTH_PORTAL_URL、VITE_APP_ID）。伺服器與訂單匯入 API 仍可使用。
-            </p>
+            <PasswordLoginForm />
           )}
         </div>
       </div>

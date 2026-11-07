@@ -1,6 +1,6 @@
 # Self-host without Manus
 
-Run this OMS on a Linux VPS (Oracle Cloud Free Tier is enough) with Docker. The stack is the Node app and MySQL 8. Manus is not required for the process, the database, or `POST /api/import/orders`.
+Run this OMS on a Linux VPS (Oracle Cloud Free Tier is enough) or Railway with Docker. The stack is the Node app and MySQL 8. Manus is not required for the process, the database, browser sign-in, or `POST /api/import/orders`.
 
 Public URL for this deployment: `https://readygo-oms.duckdns.org`.
 
@@ -8,7 +8,7 @@ Public URL for this deployment: `https://readygo-oms.duckdns.org`.
 
 | Feature | Without these env vars |
 | --- | --- |
-| Browser sign-in | Login screen loads. The button is hidden until `VITE_OAUTH_PORTAL_URL` and `VITE_APP_ID` are set at **image build** time, and `OAUTH_SERVER_URL` is set at runtime. |
+| Browser sign-in | Use `OMS_ADMIN_USERNAME` and `OMS_ADMIN_PASSWORD` (runtime). The login screen shows that form when Manus is unset. Manus OAuth remains available when `VITE_OAUTH_PORTAL_URL` and `VITE_APP_ID` are set at **image build** time and `OAUTH_SERVER_URL` is set at runtime; the screen then shows the Manus button instead of the password form. |
 | Owner notifications | Skipped. Creating an order or changing status still saves. |
 | Product images and PDF file URLs | Upload calls fail until `BUILT_IN_FORGE_API_URL` and `BUILT_IN_FORGE_API_KEY` are set. |
 | Maps and AI helpers | Same forge credentials. |
@@ -56,8 +56,9 @@ Edit `.env`. Passwords must be letters and numbers only.
 | `PORT` | no (default `3000`) | Runtime. Inside compose the process stays on 3000. |
 | `APP_PORT` | no (default `3000`) | Host side of `127.0.0.1:APP_PORT:3000`. |
 | `OMS_IMPORT_API_KEY` | yes, to accept imports | Runtime. Empty disables the route (503). |
+| `OMS_ADMIN_USERNAME`, `OMS_ADMIN_PASSWORD` | yes, for password sign-in | Runtime. Both must be non-empty. No image rebuild. |
 | `OAUTH_SERVER_URL`, `OWNER_OPEN_ID` | only for Manus login | Runtime. |
-| `VITE_APP_ID`, `VITE_OAUTH_PORTAL_URL` | only for Manus login | **Image build**. Also pass `VITE_APP_ID` at runtime; the server stores it on the session. |
+| `VITE_APP_ID`, `VITE_OAUTH_PORTAL_URL` | only for Manus login | **Image build**. Also pass `VITE_APP_ID` at runtime; the server stores it on the session. Leave both empty to show the password form. |
 | `BUILT_IN_FORGE_API_URL`, `BUILT_IN_FORGE_API_KEY` | only for storage, maps, AI, notifications | Runtime. |
 | `VITE_FRONTEND_FORGE_API_URL`, `VITE_FRONTEND_FORGE_API_KEY` | only for the map widget | **Image build**. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VITE_STRIPE_PUBLISHABLE_KEY` | only for card payments | Secret and webhook: runtime. Publishable key: **image build**. |
@@ -76,7 +77,7 @@ The app container applies every SQL file under `drizzle/` (including `drizzle/00
 
 Do not run `pnpm db:push` on the server. That command generates new migration files. Use `pnpm db:migrate` or the container entrypoint.
 
-Changing `OMS_IMPORT_API_KEY` or `JWT_SECRET` needs a recreate, not a rebuild:
+Changing `OMS_IMPORT_API_KEY`, `OMS_ADMIN_USERNAME`, `OMS_ADMIN_PASSWORD`, or `JWT_SECRET` needs a recreate, not a rebuild:
 
 ```bash
 docker compose up -d
@@ -111,6 +112,24 @@ curl -fsS https://readygo-oms.duckdns.org/api/health
 ```
 
 A ready process returns `{"ok":true}`. Missing database config or a failed `SELECT 1` returns HTTP 503.
+
+## Browser sign-in
+
+Set both variables, then recreate the process. On Railway, set them on the service and redeploy. They are not `VITE_*` build args.
+
+```bash
+# .env
+OMS_ADMIN_USERNAME=admin
+OMS_ADMIN_PASSWORD=$(openssl rand -hex 32)
+```
+
+Open the site. When `VITE_OAUTH_PORTAL_URL` and `VITE_APP_ID` are empty, the login card shows 帳號, 密碼, and 登入系統. A match sets the same `app_session_id` session cookie the Manus callback sets (`JWT_SECRET` signs it) and stores an admin user with `openId` `local-admin` and `loginMethod` `password`. On HTTPS the cookie is `SameSite=None; Secure`. On plain HTTP it is `SameSite=Lax` so the browser will keep it. Wrong credentials return 帳號或密碼不正確. If either variable is empty, sign-in is refused and a blank password is never accepted.
+
+Surrounding whitespace on the username and password is ignored. Symbols are allowed. This password is not interpolated into `DATABASE_URL`.
+
+`GET /api/health` stays public. `POST /api/import/orders` still uses `OMS_IMPORT_API_KEY` and does not accept this password.
+
+When the Manus Vite variables are baked into the image, the card keeps the Manus button and hides the password form. The password mutation stays available, and the Manus callback is unchanged.
 
 ## Import API key
 

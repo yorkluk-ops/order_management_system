@@ -1,5 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { loginWithLocalAdmin } from "./_core/localAuth";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
@@ -102,6 +103,16 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    login: publicProcedure
+      .input(
+        z.object({
+          username: z.string().trim().min(1).max(128),
+          password: z.string().trim().min(1).max(1024),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        loginWithLocalAdmin(ctx.req, ctx.res, input.username, input.password)
+      ),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

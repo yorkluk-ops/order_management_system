@@ -39,10 +39,13 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
+  const secure = isSecureRequest(req);
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
-    secure: isSecureRequest(req),
+    // Browsers drop SameSite=None cookies that are not Secure.
+    // Plain HTTP uses Lax. HTTPS stays None + Secure, same as the Manus callback.
+    sameSite: secure ? "none" : "lax",
+    secure,
   };
 }

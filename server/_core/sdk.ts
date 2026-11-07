@@ -30,12 +30,13 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
     if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
+      console.info(
+        "[OAuth] OAUTH_SERVER_URL is unset. Browser sign-in uses OMS_ADMIN_USERNAME and OMS_ADMIN_PASSWORD."
       );
+      return;
     }
+    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
   }
 
   private decodeState(state: string): string {
@@ -166,12 +167,19 @@ class SDKServer {
    */
   async createSessionToken(
     openId: string,
-    options: { expiresInMs?: number; name?: string } = {}
+    options: { expiresInMs?: number; name?: string; appId?: string } = {}
   ): Promise<string> {
+    // Empty appId fails verifySession. Callers that omit appId keep the Manus value.
+    const appId = (
+      options.appId ||
+      ENV.appId ||
+      process.env.VITE_APP_ID ||
+      ""
+    ).trim();
     return this.signSession(
       {
         openId,
-        appId: ENV.appId,
+        appId,
         name: options.name || "",
       },
       options
