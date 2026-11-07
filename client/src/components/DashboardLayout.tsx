@@ -83,15 +83,21 @@ export default function DashboardLayout({
               請登入以繼續使用訂單管理系統，管理您的客戶訂單和送貨資料。
             </p>
           </div>
-          <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
-          >
-            登入系統
-          </Button>
+          {getLoginUrl() ? (
+            <Button
+              onClick={() => {
+                window.location.href = getLoginUrl();
+              }}
+              size="lg"
+              className="w-full shadow-lg hover:shadow-xl transition-all"
+            >
+              登入系統
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center">
+              尚未設定登入服務（VITE_OAUTH_PORTAL_URL、VITE_APP_ID）。伺服器與訂單匯入 API 仍可使用。
+            </p>
+          )}
         </div>
       </div>
     );

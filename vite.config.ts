@@ -4,7 +4,6 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -150,38 +149,89 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+/**
+ * Dev-only Manus preview runtime. Production builds (and SKIP_MANUS_RUNTIME=1)
+ * do not load the package, so a self-hosted image still builds if it is absent
+ * or unhappy off Manus.
+ */
+async function loadManusRuntimePlugin(mode: string): Promise<Plugin | null> {
+  if (mode === "production" || process.env.SKIP_MANUS_RUNTIME === "1") {
+    return null;
+  }
+  try {
+    const mod = (await import("vite-plugin-manus-runtime")) as {
+      vitePluginManusRuntime?: () => Plugin;
+    };
+    if (typeof mod.vitePluginManusRuntime !== "function") return null;
+    return mod.vitePluginManusRuntime();
+  } catch (error) {
+    console.warn(
+      "[vite] Skipping vite-plugin-manus-runtime:",
+      error instanceof Error ? error.message : error
+    );
+    return null;
+  }
+}
 
-export default defineConfig({
-  plugins,
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+/** Drop the Umami snippet when its build-time env is unset, instead of emitting src="/umami". */
+function stripUnsetAnalytics(html: string): string {
+  if (
+    process.env.VITE_ANALYTICS_ENDPOINT?.trim() &&
+    process.env.VITE_ANALYTICS_WEBSITE_ID?.trim()
+  ) {
+    return html;
+  }
+  return html.replace(/\s*<script\b[^>]*umami[\s\S]*?<\/script>/i, "");
+}
+
+export default defineConfig(async ({ mode }) => {
+  const manusRuntime = await loadManusRuntimePlugin(mode);
+  const plugins: Plugin[] = [
+    react(),
+    tailwindcss(),
+    jsxLocPlugin(),
+    vitePluginManusDebugCollector(),
+    {
+      name: "self-host-analytics",
+      enforce: "post",
+      transformIndexHtml(html) {
+        return stripUnsetAnalytics(html);
+      },
     },
-  },
-  envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
-  publicDir: path.resolve(import.meta.dirname, "client", "public"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-  },
-  server: {
-    host: true,
-    allowedHosts: [
-      ".manuspre.computer",
-      ".manus.computer",
-      ".manus-asia.computer",
-      ".manuscomputer.ai",
-      ".manusvm.computer",
-      "localhost",
-      "127.0.0.1",
-    ],
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
+  ];
+  if (manusRuntime) plugins.push(manusRuntime);
+
+  return {
+    plugins,
+    resolve: {
+      alias: {
+        "@": path.resolve(import.meta.dirname, "client", "src"),
+        "@shared": path.resolve(import.meta.dirname, "shared"),
+        "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+      },
     },
-  },
+    envDir: path.resolve(import.meta.dirname),
+    root: path.resolve(import.meta.dirname, "client"),
+    publicDir: path.resolve(import.meta.dirname, "client", "public"),
+    build: {
+      outDir: path.resolve(import.meta.dirname, "dist/public"),
+      emptyOutDir: true,
+    },
+    server: {
+      host: true,
+      allowedHosts: [
+        ".manuspre.computer",
+        ".manus.computer",
+        ".manus-asia.computer",
+        ".manuscomputer.ai",
+        ".manusvm.computer",
+        "localhost",
+        "127.0.0.1",
+      ],
+      fs: {
+        strict: true,
+        deny: ["**/.*"],
+      },
+    },
+  };
 });

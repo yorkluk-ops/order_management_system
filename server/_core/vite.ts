@@ -3,10 +3,11 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
-import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
 
 export async function setupVite(app: Express, server: Server) {
+  // Loaded only for `pnpm dev`. The production bundle must not import Vite
+  // or vite.config (that config optionally loads vite-plugin-manus-runtime).
+  const { createServer: createViteServer } = await import("vite");
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -14,8 +15,7 @@ export async function setupVite(app: Express, server: Server) {
   };
 
   const vite = await createViteServer({
-    ...viteConfig,
-    configFile: false,
+    configFile: path.resolve(import.meta.dirname, "../..", "vite.config.ts"),
     server: serverOptions,
     appType: "custom",
   });

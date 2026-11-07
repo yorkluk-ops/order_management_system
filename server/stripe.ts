@@ -1,12 +1,21 @@
 import Stripe from "stripe";
 import { ENV } from "./_core/env";
 
-// 初始化 Stripe
-const stripe = new Stripe(ENV.stripeSecretKey || "", {
-  apiVersion: "2025-12-15.clover",
-});
+const STRIPE_API_VERSION = "2025-12-15.clover" as const;
 
-export { stripe };
+let stripeClient: Stripe | null = null;
+
+/** Built on first use so the process can boot without STRIPE_SECRET_KEY. */
+export function getStripe(): Stripe {
+  const key = ENV.stripeSecretKey.trim();
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY is not set");
+  }
+  if (!stripeClient) {
+    stripeClient = new Stripe(key, { apiVersion: STRIPE_API_VERSION });
+  }
+  return stripeClient;
+}
 
 // 建立付款連結
 export async function createPaymentLink(params: {
@@ -19,7 +28,7 @@ export async function createPaymentLink(params: {
   successUrl: string;
   cancelUrl: string;
 }): Promise<{ url: string; sessionId: string }> {
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     payment_method_types: ["card"],
     mode: "payment",
     line_items: [
@@ -58,7 +67,7 @@ export function constructWebhookEvent(
   payload: Buffer,
   signature: string
 ): Stripe.Event {
-  return stripe.webhooks.constructEvent(
+  return getStripe().webhooks.constructEvent(
     payload,
     signature,
     ENV.stripeWebhookSecret || ""
@@ -69,12 +78,12 @@ export function constructWebhookEvent(
 export async function getPaymentIntent(
   paymentIntentId: string
 ): Promise<Stripe.PaymentIntent> {
-  return stripe.paymentIntents.retrieve(paymentIntentId);
+  return getStripe().paymentIntents.retrieve(paymentIntentId);
 }
 
 // 獲取 Checkout Session 詳情
 export async function getCheckoutSession(
   sessionId: string
 ): Promise<Stripe.Checkout.Session> {
-  return stripe.checkout.sessions.retrieve(sessionId);
+  return getStripe().checkout.sessions.retrieve(sessionId);
 }

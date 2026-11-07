@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.github
+.manus
+.manus-logs
+.env
+.env.local
+.env.*.local
+coverage
+*.log
+**/*.test.ts
+agent-transcripts
+.cursor
