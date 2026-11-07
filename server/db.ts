@@ -1,6 +1,6 @@
 import { eq, desc, and, like, or, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, customers, payments, shops, shopInventory, inventoryLogs, purchaseOrders, purchaseOrderItems, stockTransfers, stockTransferItems, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, InsertCustomer, InsertPayment, Order, Package, Product, OrderProduct, OrderPackage, Customer, Payment, Shop, InsertShop, ShopInventory, InsertShopInventory, InventoryLog, InsertInventoryLog, PurchaseOrder, InsertPurchaseOrder, PurchaseOrderItem, InsertPurchaseOrderItem, StockTransfer, InsertStockTransfer, StockTransferItem, InsertStockTransferItem } from "../drizzle/schema";
+import { InsertUser, users, orders, packages, products, orderProducts, orderPackages, customers, payments, shops, shopInventory, inventoryLogs, purchaseOrders, purchaseOrderItems, stockTransfers, stockTransferItems, externalOrders, InsertOrder, InsertPackage, InsertProduct, InsertOrderProduct, InsertOrderPackage, InsertCustomer, InsertPayment, Order, Package, Product, OrderProduct, OrderPackage, Customer, Payment, Shop, InsertShop, ShopInventory, InsertShopInventory, InventoryLog, InsertInventoryLog, PurchaseOrder, InsertPurchaseOrder, PurchaseOrderItem, InsertPurchaseOrderItem, StockTransfer, InsertStockTransfer, StockTransferItem, InsertStockTransferItem, ExternalOrder } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1358,4 +1358,114 @@ export async function getStockingPlan(dateFrom: Date, dateTo: Date): Promise<Sto
   }
 
   return items;
+}
+
+// ==================== External order import ====================
+
+const STALE_IMPORT_CLAIM_MS = 2 * 60 * 1000;
+
+export function isDuplicateKeyError(error: unknown): boolean {
+  const visited = new Set<unknown>();
+  let current: unknown = error;
+  while (current && typeof current === "object" && !visited.has(current)) {
+    visited.add(current);
+    const record = current as { code?: string; errno?: number; message?: string; cause?: unknown };
+    if (record.code === "ER_DUP_ENTRY" || record.errno === 1062) return true;
+    if (typeof record.message === "string" && record.message.includes("Duplicate entry")) return true;
+    current = record.cause;
+  }
+  return false;
+}
+
+export async function getExternalOrderImport(platform: string, externalOrderId: string): Promise<ExternalOrder | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select()
+    .from(externalOrders)
+    .where(and(
+      eq(externalOrders.platform, platform),
+      eq(externalOrders.externalOrderId, externalOrderId),
+    ))
+    .limit(1);
+  return result[0];
+}
+
+export type ExternalOrderClaim =
+  | { outcome: "claimed"; id: number }
+  | { outcome: "completed"; row: ExternalOrder; order: Order | undefined }
+  | { outcome: "in_progress"; row: ExternalOrder };
+
+export async function claimExternalOrderImport(input: {
+  platform: string;
+  externalOrderId: string;
+  shopName: string;
+}): Promise<ExternalOrderClaim> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const result = await db.insert(externalOrders).values({
+      platform: input.platform,
+      externalOrderId: input.externalOrderId,
+      shopName: input.shopName,
+      status: "processing",
+    });
+    return { outcome: "claimed", id: Number(result[0].insertId) };
+  } catch (error) {
+    if (!isDuplicateKeyError(error)) throw error;
+  }
+
+  const row = await getExternalOrderImport(input.platform, input.externalOrderId);
+  if (!row) throw new Error("External order claim disappeared after a duplicate-key conflict");
+
+  if (row.status === "completed") {
+    const order = row.orderId ? await getOrderById(row.orderId) : undefined;
+    return { outcome: "completed", row, order };
+  }
+
+  const updatedAt = row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+  const age = Date.now() - updatedAt;
+  if (age < STALE_IMPORT_CLAIM_MS) {
+    return { outcome: "in_progress", row };
+  }
+
+  const stolen = await db.update(externalOrders)
+    .set({ shopName: input.shopName, updatedAt: new Date() })
+    .where(and(
+      eq(externalOrders.id, row.id),
+      eq(externalOrders.status, "processing"),
+      lte(externalOrders.updatedAt, row.updatedAt),
+    ));
+  const affected = Number((stolen[0] as { affectedRows?: number } | undefined)?.affectedRows ?? 0);
+  if (affected === 1) return { outcome: "claimed", id: row.id };
+
+  const latest = await getExternalOrderImport(input.platform, input.externalOrderId);
+  if (latest?.status === "completed") {
+    const order = latest.orderId ? await getOrderById(latest.orderId) : undefined;
+    return { outcome: "completed", row: latest, order };
+  }
+  return { outcome: "in_progress", row: latest ?? row };
+}
+
+export async function completeExternalOrderImport(id: number, orderId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(externalOrders)
+    .set({ orderId, status: "completed" })
+    .where(and(
+      eq(externalOrders.id, id),
+      eq(externalOrders.status, "processing"),
+    ));
+}
+
+export async function releaseExternalOrderImport(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(externalOrders).where(and(
+    eq(externalOrders.id, id),
+    eq(externalOrders.status, "processing"),
+  ));
 }

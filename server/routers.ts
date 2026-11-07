@@ -4,11 +4,9 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import {
-  createOrder,
   getOrderById,
   getOrders,
   updateOrder,
-  updateOrderStatus,
   deleteOrder,
   getOrderStats,
   getOrderStatsByDateRange,
@@ -24,7 +22,6 @@ import {
   getOrderProducts,
   deleteOrderProducts,
   updateProductStockBySku,
-  updateProductStock,
   getMonthlyDeliveryReport,
   getStockingPlan,
   getAllPackages,
@@ -85,7 +82,11 @@ import {
   getStockTransferItems,
 } from "./db";
 import { ORDER_STATUS } from "../shared/packages";
-import { notifyOwner } from "./_core/notification";
+import {
+  applyOrderStatusTransition,
+  createOrderWithStockDeduction,
+  findUltronDeliveryShortages,
+} from "./orderFulfillment";
 import { invokeLLM } from "./_core/llm";
 import { generateQuotationPdf, generateInvoicePdf, generateReceiptPdf, type OrderForPdf, generateTransferPdf, type TransferForPdf } from "./pdfService";
 
@@ -250,100 +251,24 @@ export const appRouter = router({
         packageGiftProductIds: z.array(z.number()).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const result = await createOrder({
+        return createOrderWithStockDeduction({
           customerName: input.customerName,
           customerPhone: input.customerPhone,
           customerEmail: input.customerEmail || null,
-          packageId: 1,
-          packageName: input.packageName || "其他｜單件產品購買",
-          packageVariant: input.packageVariant || null,
-          shopName: input.shopName || "ReadyGo HK",
-          orderAmount: input.orderAmount.toString(),
-          commission: input.commission.toString(),
+          packageName: input.packageName,
+          packageVariant: input.packageVariant,
+          shopName: input.shopName,
+          orderAmount: input.orderAmount,
+          commission: input.commission,
           deliveryAddress: input.deliveryAddress,
-          deliveryDate: input.deliveryDate ? new Date(input.deliveryDate) : null,
-          deliveryTimeSlot: input.deliveryTimeSlot || null,
-          notes: input.notes || null,
-          status: "pending",
+          deliveryDate: input.deliveryDate,
+          deliveryTimeSlot: input.deliveryTimeSlot,
+          notes: input.notes,
+          products: input.products,
+          gifts: input.gifts,
+          packageGiftProductIds: input.packageGiftProductIds,
           createdBy: ctx.user.id,
         });
-
-        // 新增產品明細並扣除庫存
-        const allProducts = [
-          ...(input.products || []).map(p => ({ ...p, isGift: false })),
-          ...(input.gifts || []).map(g => ({ ...g, isGift: true })),
-        ];
-
-        if (allProducts.length > 0) {
-          await addOrderProducts(result.id, allProducts.map(p => ({
-            sku: p.sku,
-            productName: p.productName,
-            color: p.color || null,
-            quantity: p.quantity,
-            unitPrice: (p.unitPrice !== undefined && p.unitPrice !== null) ? p.unitPrice.toString() : "0",
-            isGift: p.isGift ? "yes" : "no",
-          })));
-
-          // 扣除香港庫存（允許負數）
-          for (const product of allProducts) {
-            await updateProductStockBySku(product.sku, -product.quantity);
-          }
-
-          // 同時扣除商鋪庫存（根據訂單的商鋪名稱找對應商鋪）
-          const orderShopName = input.shopName || "ReadyGo HK";
-          const matchedShop = await getShopByName(orderShopName);
-          if (matchedShop) {
-            for (const product of allProducts) {
-              const dbProduct = await getProductBySku(product.sku);
-              if (dbProduct) {
-                const newQty = await adjustShopInventory(dbProduct.id, matchedShop.id, -product.quantity);
-                await createInventoryLog({
-                  productId: dbProduct.id,
-                  shopId: matchedShop.id,
-                  quantityChange: -product.quantity,
-                  quantityAfter: newQty,
-                  changeType: 'order',
-                  referenceId: result.id,
-                  referenceType: 'order',
-                  notes: `訂單 ${result.orderNumber} 銷售扣減`,
-                  createdBy: ctx.user.id,
-                });
-              }
-            }
-          }
-        }
-
-        // 扣除套餐贈品的庫存
-        if (input.packageGiftProductIds && input.packageGiftProductIds.length > 0) {
-          const orderShopName = input.shopName || "ReadyGo HK";
-          const matchedShop = await getShopByName(orderShopName);
-          for (const productId of input.packageGiftProductIds) {
-            await updateProductStock(productId, -1);
-            // 同時扣除商鋪庫存
-            if (matchedShop) {
-              const newQty = await adjustShopInventory(productId, matchedShop.id, -1);
-              await createInventoryLog({
-                productId,
-                shopId: matchedShop.id,
-                quantityChange: -1,
-                quantityAfter: newQty,
-                changeType: 'order',
-                referenceId: result.id,
-                referenceType: 'order',
-                notes: `訂單 ${result.orderNumber} 套餐贈品扣減`,
-                createdBy: ctx.user.id,
-              });
-            }
-          }
-        }
-
-        // 發送通知給管理員
-        await notifyOwner({
-          title: `新訂單 ${result.orderNumber}`,
-          content: `客戶：${input.customerName}\n套餐：${input.packageName}\n金額：$${input.orderAmount}\n送貨地址：${input.deliveryAddress}`,
-        });
-
-        return result;
       }),
 
     list: protectedProcedure
@@ -514,30 +439,8 @@ export const appRouter = router({
         const order = await getOrderById(input.id);
         if (!order) throw new Error("訂單不存在");
 
-        const ULTRON_SHOP_NAME = "奧創數碼有限公司";
-        const ultronShop = await getShopByName(ULTRON_SHOP_NAME);
-        if (!ultronShop) return { sufficient: true, shortages: [] };
-
         const orderProductsList = await getOrderProducts(input.id);
-        const shortages: { productName: string; sku: string; required: number; available: number }[] = [];
-
-        for (const product of orderProductsList) {
-          if (product.isGift === "yes") continue;
-          const dbProduct = await getProductBySku(product.sku);
-          if (!dbProduct) continue;
-
-          const inv = await getShopInventoryItem(dbProduct.id, ultronShop.id);
-          const available = inv?.quantity ?? 0;
-          if (available < product.quantity) {
-            shortages.push({
-              productName: product.productName,
-              sku: product.sku,
-              required: product.quantity,
-              available,
-            });
-          }
-        }
-
+        const { shortages } = await findUltronDeliveryShortages(orderProductsList);
         return { sufficient: shortages.length === 0, shortages };
       }),
 
@@ -547,82 +450,11 @@ export const appRouter = router({
         status: z.enum(["pending", "confirmed", "delivering", "completed", "cancelled"]),
       }))
       .mutation(async ({ input, ctx }) => {
-        const order = await getOrderById(input.id);
-        if (!order) throw new Error("訂單不存在");
-
-        const prevStatus = order.status;
-        const newStatus = input.status;
-
-        await updateOrderStatus(input.id, newStatus);
-
-        // ── 奧創數碼有限公司庫存自動同步 ──────────────────────────
-        // 規則：
-        //   pending/confirmed → delivering：扣減奧創數碼有限公司庫存（出貨）
-        //   delivering → pending/confirmed：恢復奧創數碼有限公司庫存（撤回）
-        const ULTRON_SHOP_NAME = "奧創數碼有限公司";
-        const isGoingToDelivering = newStatus === "delivering" && prevStatus !== "delivering";
-        const isRevertFromDelivering = prevStatus === "delivering" && (newStatus === "pending" || newStatus === "confirmed");
-
-        if (isGoingToDelivering || isRevertFromDelivering) {
-          const ultronShop = await getShopByName(ULTRON_SHOP_NAME);
-          if (ultronShop) {
-            const orderProductsList = await getOrderProducts(input.id);
-
-            // 出貨前先檢查庫存是否足夠（防止庫存變負數）
-            if (isGoingToDelivering) {
-              const shortages: string[] = [];
-              for (const product of orderProductsList) {
-                if (product.isGift === "yes") continue;
-                const dbProduct = await getProductBySku(product.sku);
-                if (!dbProduct) continue;
-                const inv = await getShopInventoryItem(dbProduct.id, ultronShop.id);
-                const available = inv?.quantity ?? 0;
-                if (available < product.quantity) {
-                  shortages.push(`${product.productName}（庫存: ${available}，需要: ${product.quantity}）`);
-                }
-              }
-              if (shortages.length > 0) {
-                // 撤销剛才的狀態更新
-                await updateOrderStatus(input.id, prevStatus as any);
-                throw new Error(`庫存不足，無法轉為配送中\n\n${shortages.join("\n")}`);
-              }
-            }
-
-            for (const product of orderProductsList) {
-              if (product.isGift === "yes") continue; // 贈品不計
-              const dbProduct = await getProductBySku(product.sku);
-              if (!dbProduct) continue;
-
-              // 出貨：扣減奧創庫存；撤回：恢復奧創庫存
-              const qtyChange = isGoingToDelivering ? -product.quantity : product.quantity;
-              const newQty = await adjustShopInventory(dbProduct.id, ultronShop.id, qtyChange);
-
-              await createInventoryLog({
-                productId: dbProduct.id,
-                shopId: ultronShop.id,
-                quantityChange: qtyChange,
-                quantityAfter: newQty,
-                changeType: isGoingToDelivering ? "order" : "order_cancel",
-                referenceId: input.id,
-                referenceType: "order",
-                notes: isGoingToDelivering
-                  ? `訂單 ${order.orderNumber} 配送中 — 奧創出貨`
-                  : `訂單 ${order.orderNumber} 撤回配送 — 恢復奧創庫存`,
-                createdBy: ctx.user?.id,
-              });
-            }
-          }
-        }
-        // ─────────────────────────────────────────────────────────
-
-        // 發送狀態變更通知
-        const statusLabel = ORDER_STATUS[newStatus].label;
-        await notifyOwner({
-          title: `訂單狀態更新 ${order.orderNumber}`,
-          content: `訂單 ${order.orderNumber} 狀態已更新為：${statusLabel}\n客戶：${order.customerName}`,
+        return applyOrderStatusTransition({
+          id: input.id,
+          status: input.status,
+          createdBy: ctx.user?.id,
         });
-
-        return { success: true };
       }),
 
     delete: protectedProcedure
