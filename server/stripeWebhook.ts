@@ -3,11 +3,7 @@ import express from "express";
 import Stripe from "stripe";
 import { ENV } from "./_core/env";
 import { createPayment, updateOrderPaymentStatus, getOrderById, updateCustomerStats } from "./db";
-
-// 初始化 Stripe
-const stripe = new Stripe(ENV.stripeSecretKey || "", {
-  apiVersion: "2025-12-15.clover",
-});
+import { getStripe } from "./stripe";
 
 export function registerStripeWebhook(app: Express) {
   // Stripe Webhook 需要使用 raw body
@@ -15,15 +11,20 @@ export function registerStripeWebhook(app: Express) {
     "/api/stripe/webhook",
     express.raw({ type: "application/json" }),
     async (req: Request, res: Response) => {
+      if (!ENV.stripeSecretKey.trim() || !ENV.stripeWebhookSecret.trim()) {
+        res.status(503).json({ error: "Stripe is not configured" });
+        return;
+      }
+
       const signature = req.headers["stripe-signature"] as string;
 
       let event: Stripe.Event;
 
       try {
-        event = stripe.webhooks.constructEvent(
+        event = getStripe().webhooks.constructEvent(
           req.body,
           signature,
-          ENV.stripeWebhookSecret || ""
+          ENV.stripeWebhookSecret
         );
       } catch (err: any) {
         console.error(`[Stripe Webhook] Signature verification failed:`, err.message);

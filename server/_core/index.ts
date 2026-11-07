@@ -8,7 +8,8 @@ import { registerStripeWebhook } from "../stripeWebhook";
 import { registerOrderImportRoutes } from "../orderImport";
 import { appRouter } from "../routers";
 import { generateQuotationPdf, generateInvoicePdf, generateReceiptPdf, OrderForPdf } from "../pdfService";
-import { getOrderById, getOrderProducts, getProductById } from "../db";
+import { sql } from "drizzle-orm";
+import { getDb, getOrderById, getOrderProducts, getProductById } from "../db";
 import { storagePut } from "../storage";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -35,6 +36,11 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // Caddy/nginx terminate TLS and forward the original scheme.
+  if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+  }
   
   // Stripe Webhook 需要在 express.json() 之前註冊（使用 raw body）
   registerStripeWebhook(app);
@@ -46,6 +52,26 @@ async function startServer() {
   registerOAuthRoutes(app);
   // External storefront order import (Bearer OMS_IMPORT_API_KEY)
   registerOrderImportRoutes(app);
+
+  // Process + database probe for Docker and the reverse proxy. No auth.
+  app.get("/api/health", async (_req, res) => {
+    if (!process.env.DATABASE_URL) {
+      res.status(503).json({ ok: false, database: "unconfigured" });
+      return;
+    }
+    try {
+      const db = await getDb();
+      if (!db) {
+        res.status(503).json({ ok: false, database: "unavailable" });
+        return;
+      }
+      await db.execute(sql`select 1`);
+      res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error("[health] database check failed", error);
+      res.status(503).json({ ok: false, database: "error" });
+    }
+  });
 
   // PDF generation endpoint - generates PDF, uploads to S3, returns URL
   app.get("/api/pdf/:orderId/:type", async (req, res) => {
@@ -149,15 +175,24 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  const preferredPort = parseInt(process.env.PORT || "3000", 10);
+  // Containers must stay on PORT. The dev server may slide to the next free port.
+  const port =
+    process.env.NODE_ENV === "production"
+      ? preferredPort
+      : await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
+  server.on("error", error => {
+    console.error("[server] failed to listen", error);
+    process.exit(1);
+  });
+
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${port}/`);
   });
 }
 
